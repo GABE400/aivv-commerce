@@ -1,0 +1,95 @@
+"use server";
+
+import { db } from "@/lib/db";
+import { orders, orderItems, products, productVariants } from "@/lib/db/schema";
+import { eq, and } from "drizzle-orm";
+import { printify } from "@/lib/printify";
+
+export async function routeAutoFulfillmentAction(orderId: string) {
+  try {
+    // 1. Fetch Order and its items with type and supplier identifiers
+    const orderData = await db.query.orders.findFirst({
+      where: eq(orders.id, orderId),
+      with: {
+        user: true,
+        items: {
+          with: {
+            variant: {
+              with: {
+                product: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!orderData || !orderData.shippingAddress) {
+      console.warn(`Fulfillment Router: Order ${orderId} not found or missing shipping address.`);
+      return;
+    }
+
+    // Parse shipping address (assuming JSON string from Dodo)
+    let address;
+    try {
+      address = JSON.parse(orderData.shippingAddress);
+    } catch (e) {
+      console.error(`Fulfillment Router: Failed to parse address for order ${orderId}`, e);
+      return;
+    }
+
+    // 2. Identify POD items
+    const podItems = orderData.items.filter(
+      item => item.variant.product.type === "pod" && item.variant.supplierVariantId
+    );
+
+    if (podItems.length === 0) {
+      console.log(`Fulfillment Router: No POD items found in order ${orderId}.`);
+      return;
+    }
+
+    // 3. Group by Product for Printify (Printify orders can have multiple variants)
+    // For simplicity, we create one Printify order per storefront order
+    try {
+      const printifyResult = await printify.createOrder({
+        externalId: orderData.id,
+        lineItems: podItems.map(item => ({
+          productId: item.variant.product.supplierProductId || "", // Mapping to printify product id
+          variantId: item.variant.supplierVariantId!,
+          quantity: item.quantity,
+        })),
+        shippingAddress: {
+          firstName: address.firstName || orderData.user.name.split(' ')[0],
+          lastName: address.lastName || orderData.user.name.split(' ').slice(1).join(' ') || "User",
+          email: orderData.user.email,
+          phone: address.phone || "",
+          address1: address.line1,
+          address2: address.line2,
+          city: address.city,
+          region: address.state,
+          zip: address.postalCode,
+          country: address.country,
+        }
+      });
+
+      // 4. Update order items with Printify ID
+      if (printifyResult && printifyResult.id) {
+        for (const item of podItems) {
+            await db.update(orderItems)
+                .set({ 
+                    supplierOrderId: printifyResult.id,
+                    fulfillmentStatus: "pending" 
+                })
+                .where(eq(orderItems.id, item.id));
+        }
+        console.log(`Fulfillment Router: Order ${orderId} successfully pushed to Printify ID ${printifyResult.id}`);
+      }
+    } catch (error: any) {
+      console.error(`Fulfillment Router: Printify submission failed for order ${orderId}`, error);
+      // Here we might mark fulfillmentStatus as 'failed' in the DB
+    }
+
+  } catch (error) {
+    console.error(`Fulfillment Router: Unexpected error routing order ${orderId}`, error);
+  }
+}
