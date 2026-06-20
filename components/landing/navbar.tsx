@@ -13,9 +13,10 @@ import { authClient } from "@/lib/auth-client";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 
 const navLinks = [
-  { name: "Features", href: "#features" },
-  { name: "How It Works", href: "#how-it-works" },
+  { name: "Automate", href: "#automation" },
+  { name: "Shop", href: "#shop" },
   { name: "Pricing", href: "#pricing" },
+  { name: "How It Works", href: "#how-it-works" },
 ];
 
 export function Navbar() {

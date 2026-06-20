@@ -37,7 +37,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">
-              The modern operating system for global e-commerce. Build, scale, and automate without holding inventory.
+              Automate your business, shop without inventory. Powered by custom AI workflows and global print-on-demand fulfillment.
             </p>
             <div className="flex space-x-4">
               <div className="size-10 rounded-full bg-muted/50 border border-glass-border flex items-center justify-center hover:bg-accent/10 hover:border-accent/40 transition-all cursor-pointer text-foreground">

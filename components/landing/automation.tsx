@@ -3,52 +3,31 @@
 import { motion } from "motion/react";
 import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
-import { 
-  Globe, 
-  Package, 
-  Zap, 
-  Lock, 
-  Layers, 
-  BarChart3,
-  CreditCard 
-} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Key, Zap, Users } from "lucide-react";
 
-const features = [
+const automationFeatures = [
   {
-    title: "Global Payments",
-    description: "Handle global taxes and multi-currency checkout automatically with an integrated Merchant of Record.",
-    icon: Globe,
+    title: "Bring Your Own API Key",
+    description: "Connect Claude, OpenAI, or Gemini. You control the AI, we build the workflows.",
+    icon: Key,
   },
   {
-    title: "No Inventory Required",
-    description: "Sell print-on-demand and dropshipping products without holding any stock.",
-    icon: Package,
-  },
-  {
-    title: "Automated Fulfillment",
-    description: "Orders are automatically sent to suppliers for production and shipping.",
+    title: "Pre-built Workflow Library",
+    description: "Launch with ready-made automations for sales, support, content, and operations.",
     icon: Zap,
   },
   {
-    title: "Secure Identity Hub",
-    description: "Enterprise-grade authentication with multi-tenant support and granular permissions.",
-    icon: Lock,
-  },
-  {
-    title: "Supplier Abstraction",
-    description: "A unified system to manage multiple suppliers under one dashboard.",
-    icon: Layers,
-  },
-  {
-    title: "Real-time Analytics",
-    description: "Monitor your revenue, orders, and supplier performance in real-time.",
-    icon: BarChart3,
+    title: "Local Setup Available",
+    description: "Based in Zambia? We'll visit your business and set everything up for you in person.",
+    icon: Users,
   },
 ];
 
-export function Features() {
+export function Automation() {
   return (
-    <section id="features" className="py-24 relative overflow-hidden bg-background">
+    <section id="automation" className="py-24 relative overflow-hidden bg-background">
+      {/* Background Glow */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-64 h-64 bg-accent/5 dark:bg-accent/10 blur-[100px] rounded-full pointer-events-none" />
       
       <Container>
@@ -57,24 +36,24 @@ export function Features() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl md:text-5xl font-bold mb-6 text-foreground"
+            className="text-3xl md:text-5xl font-bold mb-6 text-foreground font-syne"
           >
-            Built for scale. <span className="text-gradient">Ready for production.</span>
+            Run your business on <span className="text-gradient">autopilot.</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-lg text-muted-foreground"
+            className="text-lg text-muted-foreground leading-relaxed"
           >
-            Aivv Commerce OS provides everything you need to build and scale your 
-            e-commerce empire without the operational overhead.
+            Connect your Claude or OpenAI API key and automate any part of your operation — 
+            from customer follow-ups to internal reports. Works for any business, any industry.
           </motion.p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
+        <div className="grid md:grid-cols-3 gap-6">
+          {automationFeatures.map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
@@ -88,7 +67,7 @@ export function Features() {
                     <feature.icon className="size-6 text-accent group-hover:text-white" />
                   </div>
                   <h3 className="text-xl font-bold mb-3 text-foreground">{feature.title}</h3>
-                  <p className="text-muted-foreground leading-relaxed">
+                  <p className="text-muted-foreground leading-relaxed text-sm">
                     {feature.description}
                   </p>
                 </CardContent>
@@ -97,7 +76,7 @@ export function Features() {
           ))}
         </div>
 
-        {/* Dedicated Dodo Payments Highlight Banner */}
+        {/* Local Setup Consultation Banner */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -106,30 +85,26 @@ export function Features() {
           className="mt-12"
         >
           <Card className="relative overflow-hidden border-l-4 border-l-accent border-y border-r border-glass-border bg-glass-card bg-gradient-to-r from-accent/[0.03] to-transparent hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 group transition-all duration-300">
-            {/* Subtle background glow */}
+            {/* Background glow */}
             <div className="absolute right-0 top-0 -translate-y-12 translate-x-12 w-64 h-64 bg-accent/5 blur-[80px] rounded-full pointer-events-none group-hover:bg-accent/10 transition-all duration-500" />
             
             <CardContent className="p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-              <div className="space-y-4 max-w-3xl">
+              <div className="space-y-2 max-w-3xl">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-bold text-accent uppercase tracking-wider">
-                  Payment Architecture
+                  On-Site Consultation
                 </div>
-                <h3 className="text-2xl md:text-3xl font-extrabold text-foreground tracking-tight">
-                  Global payments, handled.
+                <h3 className="text-xl md:text-2xl font-extrabold text-foreground tracking-tight">
+                  Not sure where to start?
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                  Aivv Commerce OS integrates with Dodo Payments — your Merchant of Record for automatic tax compliance, multi-currency checkout, and global payouts. Sell anywhere, comply everywhere.
+                  We offer on-site setup for businesses in Lusaka and surrounding areas.
                 </p>
               </div>
 
-              {/* Powered by Dodo Payments Badge */}
               <div className="flex shrink-0 items-center justify-start md:justify-end">
-                <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-full border border-orange-500/20 bg-orange-500/5 text-orange-600 dark:text-orange-400 font-bold text-xs shadow-sm backdrop-blur-sm hover:scale-105 transition-transform duration-300">
-                  <div className="size-5 rounded-full bg-orange-500 flex items-center justify-center text-white shrink-0 shadow-sm">
-                    <CreditCard className="size-3" />
-                  </div>
-                  <span className="tracking-wide">Powered by Dodo Payments</span>
-                </div>
+                <Button className="h-12 px-6 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl transition-transform active:scale-95 cursor-pointer">
+                  Book a Setup Session
+                </Button>
               </div>
             </CardContent>
           </Card>

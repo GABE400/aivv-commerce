@@ -21,8 +21,8 @@ export function DashboardPreview() {
         <div className="text-center max-w-3xl mx-auto mb-20">
           <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">A dashboard for <span className="text-gradient">operators.</span></h2>
           <p className="text-lg text-muted-foreground">
-            Manage your entire global supply chain from a single, beautiful interface. 
-            Real-time data visualization and automated status tracking.
+            Manage your automations, connect API keys, and track store orders from a single, beautiful interface. 
+            Real-time workflow telemetry and status tracking.
           </p>
         </div>
 

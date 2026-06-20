@@ -123,24 +123,30 @@ export function Hero() {
               </div>
               
               <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.1] text-foreground">
-                Build a global <br />
-                <span className="text-gradient">e-commerce system</span> <br />
-                without inventory.
+                Automate your business. <br />
+                <span className="text-gradient">Shop without inventory.</span>
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Automate your entire dropshipping or print-on-demand workflow. 
-                Everything you need for <span className="text-foreground font-medium">Global Supply Chain</span>, <span className="text-foreground font-medium">Digital Distribution</span> & <span className="text-foreground font-medium">Merchant Compliance</span>.
+                Aivv gives businesses AI-powered automation using their own API keys — and runs a global print-on-demand store so you can shop without us holding any stock.
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
-                <Button size="lg" className="w-full sm:w-auto">
-                  Start Building
-                </Button>
-                <Button variant="secondary" size="lg" className="w-full sm:w-auto space-x-2">
-                  <Play className="size-4 fill-current" />
-                  <span>View Demo</span>
-                </Button>
+                <a href="#automation" className="w-full sm:w-auto">
+                  <Button size="lg" className="w-full font-bold">
+                    Automate My Business
+                  </Button>
+                </a>
+                <a href="#shop" className="w-full sm:w-auto">
+                  <Button variant="secondary" size="lg" className="w-full font-bold">
+                    Shop the Store
+                  </Button>
+                </a>
+              </div>
+
+              <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs text-muted-foreground font-medium">
+                <span>✦ For businesses & operators</span>
+                <span>✦ Powered by Printify + Dodo Payments</span>
               </div>
             </motion.div>
           </div>

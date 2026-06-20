@@ -19,20 +19,34 @@ export function FinalCTA() {
           transition={{ duration: 0.6 }}
           className="glass p-12 md:p-24 rounded-3xl border border-glass-border shadow-2xl"
         >
+          {/* Stat Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
+            <div className="inline-flex items-center px-3 py-1 rounded-full border border-glass-border bg-glass text-[10px] font-bold text-accent uppercase tracking-wider">
+              150+ Countries Supported
+            </div>
+            <div className="inline-flex items-center px-3 py-1 rounded-full border border-glass-border bg-glass text-[10px] font-bold text-accent uppercase tracking-wider">
+              Avg. 1.2 Day Fulfillment
+            </div>
+          </div>
+
           <h2 className="text-4xl md:text-6xl font-bold mb-8 leading-tight text-foreground">
-            Stop building stores. <br />
-            <span className="text-gradient">Start building systems.</span>
+            The world's fastest way to automate <br />
+            <span className="text-gradient">and shop without inventory.</span>
           </h2>
-          <p className="text-xl text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Join the automated e-commerce revolution. Launch your global operating system today.
+          <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
+            Connect custom AI workflows using your own API keys, checkout catalog items securely, and run your business on autopilot — powered by Printify and Dodo Payments.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-            <Button size="lg" className="h-16 px-12 text-lg">
-              Launch Your System
-            </Button>
-            <Button variant="outline" size="lg" className="h-16 px-12 text-lg border-glass-border">
-              Talk to an Expert
-            </Button>
+            <a href="#automation" className="w-full sm:w-auto">
+              <Button size="lg" className="h-16 px-12 text-lg font-bold w-full">
+                Automate My Business
+              </Button>
+            </a>
+            <a href="#shop" className="w-full sm:w-auto">
+              <Button variant="outline" size="lg" className="h-16 px-12 text-lg border-glass-border font-bold w-full">
+                Shop the Store
+              </Button>
+            </a>
           </div>
         </motion.div>
       </Container>

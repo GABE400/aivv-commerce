@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Syne } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +10,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const syne = Syne({
+  variable: "--font-syne",
+  subsets: ["latin"],
+  weight: ["700"],
 });
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -30,7 +36,7 @@ export default function RootLayout({
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased selection:bg-purple-500/30 selection:text-white`}
+      className={`${geistSans.variable} ${geistMono.variable} ${syne.variable} h-full antialiased selection:bg-purple-500/30 selection:text-white`}
     >
       <body 
         className="min-h-full bg-background text-foreground flex flex-col font-sans transition-colors duration-300"
