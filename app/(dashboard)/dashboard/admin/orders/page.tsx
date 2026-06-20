@@ -36,7 +36,7 @@ export default async function AdminOrdersPage() {
       accessorKey: "user",
       cell: (row: any) => (
         <div>
-          <div className="font-bold">{row.user.name}</strong></div>
+          <div className="font-bold">{row.user.name}</div>
           <div className="text-[10px] text-muted-foreground">{row.user.email}</div>
         </div>
       ),

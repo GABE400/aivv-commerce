@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from "react";
-import { IKUpload } from "@imagekit/next";
+import { IKUpload } from "imagekitio-next";
 import { Button } from "@/components/ui/button";
 import { Upload, X, Loader2, FileText, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";

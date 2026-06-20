@@ -1,4 +1,4 @@
-import ImageKit from "imagekit";
+import ImageKit from "@imagekit/nodejs";
 import { SupplierAdapter, FulfillmentOrder } from "./types";
 
 const imagekit = new ImageKit({

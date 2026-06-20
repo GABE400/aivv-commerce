@@ -98,6 +98,7 @@ export default async function SupplierDashboard() {
           {format(new Date(row.order.createdAt), "MMM d, h:mm a")}
         </div>
       ),
+    },
     {
       header: "Actions",
       accessorKey: "id",
