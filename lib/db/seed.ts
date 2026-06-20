@@ -6,8 +6,6 @@ import {
   productVariants, 
   users 
 } from "./schema";
-import { v4 as uuidv4 } from "uuid";
-
 async function seed() {
   console.log("🌱 Seeding database...");
 

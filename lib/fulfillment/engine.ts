@@ -59,7 +59,7 @@ export async function processFulfillment(orderId: string) {
     // For now, mark as fulfilled immediately
     await db.update(orderItems)
       .set({ 
-        fulfillmentStatus: "fulfilled",
+        fulfillmentStatus: "delivered",
         supplierOrderId: `IMK_${orderData.id}` 
       })
       .where(inArray(orderItems.id, digitalItems.map(i => i.id)));

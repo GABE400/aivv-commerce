@@ -7,7 +7,17 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { ChevronRight, Play, Star, ShoppingBag, Palette } from "lucide-react";
 
-const dropshipProducts = [
+interface ProductItem {
+  name: string;
+  price: string;
+  image: string;
+  rating: number;
+  reviews: number;
+  tag: string;
+  isPOD?: boolean;
+}
+
+const dropshipProducts: ProductItem[] = [
   {
     name: "Aura Runner Pro",
     price: "$189.00",
@@ -42,7 +52,7 @@ const dropshipProducts = [
   },
 ];
 
-const podProducts = [
+const podProducts: ProductItem[] = [
   {
     name: "Custom Art Tee",
     price: "$34.99",
@@ -223,7 +233,7 @@ export function Hero() {
                       {/* Product Info */}
                       <div className="p-3 md:p-4 space-y-1.5">
                         <div className="flex items-center gap-1.5">
-                          {"isPOD" in product && product.isPOD && (
+                          {product.isPOD && (
                             <span className="text-[9px] px-1.5 py-0.5 rounded bg-pink-500/10 text-pink-500 font-bold uppercase">
                               POD
                             </span>

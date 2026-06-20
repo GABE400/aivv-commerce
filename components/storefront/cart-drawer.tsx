@@ -9,7 +9,7 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { ShoppingCart, Trash2, Plus, Minus, MoveRight, ShoppingBag } from "lucide-react";
+import { ShoppingCart, Trash2, Plus, Minus, MoveRight, ShoppingBag, Loader2 } from "lucide-react";
 import { useCart } from "@/lib/store/use-cart";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";

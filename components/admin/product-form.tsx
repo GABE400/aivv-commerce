@@ -130,7 +130,7 @@ export function ProductForm({ categories, suppliers, initialData, productId }: P
         router.push("/dashboard/admin/products");
         router.refresh();
       } else {
-        toast.error(result.error || "Operation failed");
+        toast.error((result as any).error || "Operation failed");
       }
     } catch (error) {
       toast.error("Something went wrong");

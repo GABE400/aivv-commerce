@@ -81,7 +81,7 @@ export function Navbar() {
               
               {session ? (
                 <div className="flex items-center gap-2">
-                  {session.user.role === "admin" && (
+                  {(session.user as any).role === "admin" && (
                     <Link href="/dashboard/admin">
                       <Button variant="ghost" size="sm" className="gap-2 rounded-xl text-accent font-bold hover:bg-accent/10">
                         Admin
@@ -141,7 +141,7 @@ export function Navbar() {
             ))}
             {session ? (
               <div className="space-y-4">
-                {session.user.role === "admin" && (
+                {(session.user as any).role === "admin" && (
                   <Link href="/dashboard/admin" onClick={() => setIsOpen(false)}>
                     <Button variant="outline" className="w-full gap-2 border-accent text-accent">
                       Admin Panel

@@ -2,9 +2,7 @@ import ImageKit from "@imagekit/nodejs";
 import { SupplierAdapter, FulfillmentOrder } from "./types";
 
 const imagekit = new ImageKit({
-  publicKey: process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!,
   privateKey: process.env.IMAGEKIT_PRIVATE_KEY!,
-  urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!,
 });
 
 export class ImageKitAdapter implements SupplierAdapter {
@@ -20,10 +18,11 @@ export class ImageKitAdapter implements SupplierAdapter {
   }
 
   async generateSecureDownloadUrl(path: string) {
-    return imagekit.url({
-      path: path,
+    return imagekit.helper.buildSrc({
+      urlEndpoint: process.env.NEXT_PUBLIC_IMAGEKIT_URL_ENDPOINT!,
+      src: path,
       signed: true,
-      expireSeconds: 3600, // 1 hour
+      expiresIn: 3600, // 1 hour
     });
   }
 }

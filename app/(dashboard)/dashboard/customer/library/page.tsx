@@ -21,18 +21,14 @@ export default async function CustomerLibrary() {
   const userId = session.user.id;
 
   // Fetch all purchased digital assets
-  const digitalAssets = await db.select({
+  const rows = await db.select({
     id: orderItems.id,
     purchaseDate: orders.createdAt,
-    variant: {
-        name: productVariants.name,
-        assetUrl: productVariants.assetUrl,
-        product: {
-            name: products.name,
-            images: products.images,
-            description: products.description,
-        }
-    }
+    variantName: productVariants.name,
+    assetUrl: productVariants.assetUrl,
+    productName: products.name,
+    productImages: products.images,
+    productDescription: products.description,
   })
   .from(orderItems)
   .innerJoin(orders, eq(orderItems.orderId, orders.id))
@@ -46,6 +42,20 @@ export default async function CustomerLibrary() {
     )
   )
   .orderBy(desc(orders.createdAt));
+
+  const digitalAssets = rows.map(row => ({
+    id: row.id,
+    purchaseDate: row.purchaseDate,
+    variant: {
+      name: row.variantName,
+      assetUrl: row.assetUrl,
+      product: {
+        name: row.productName,
+        images: row.productImages,
+        description: row.productDescription,
+      }
+    }
+  }));
 
   return (
     <div className="space-y-8">

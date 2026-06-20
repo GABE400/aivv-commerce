@@ -25,7 +25,6 @@ export async function POST(req: Request) {
           .set({ 
             fulfillmentStatus: "shipped",
             trackingNumber: trackingNumber,
-            updatedAt: new Date()
           })
           .where(eq(orderItems.supplierOrderId, printifyOrderId));
 

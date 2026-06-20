@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { ProductForm } from "@/components/admin/product-form";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
