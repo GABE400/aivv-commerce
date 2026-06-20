@@ -69,6 +69,7 @@ export function Sidebar({ user }: { user: any }) {
               alt="AIVV"
               width={32}
               height={32}
+              style={{ height: "auto" }}
               className="rounded-lg"
             />
             <span className="text-lg font-bold">Aivv <span className="text-accent">OS</span></span>

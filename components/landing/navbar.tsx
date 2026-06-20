@@ -64,6 +64,7 @@ export function Navbar() {
                 alt="AIVV - Automated Intelligent Virtual Ventures"
                 width={36}
                 height={36}
+                style={{ height: "auto" }}
                 className="rounded-lg"
                 priority
               />

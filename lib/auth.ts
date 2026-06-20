@@ -64,27 +64,33 @@ export const auth = betterAuth({
         }
 
         try {
-          await transporter.sendMail({
-            from: process.env.EMAIL_FROM || '"Aivv" <no-reply@aivv.app>',
-            to: email,
-            subject: "Sign in to Aivv",
-            text: `Sign in to your account by clicking this link: ${url}`,
-            html: `
-              <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
-                <h2 style="color: #111827; margin-bottom: 16px;">Sign in to Aivv</h2>
-                <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Click the button below to sign in to your Aivv account. This link will expire in 10 minutes.</p>
-                <div style="margin: 32px 0;">
-                  <a href="${url}" style="background-color: #000; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Sign In</a>
+          if (process.env.SMTP_HOST && process.env.SMTP_HOST !== "smtp.example.com") {
+            await transporter.sendMail({
+              from: process.env.EMAIL_FROM || '"Aivv" <no-reply@aivv.app>',
+              to: email,
+              subject: "Sign in to Aivv",
+              text: `Sign in to your account by clicking this link: ${url}`,
+              html: `
+                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+                  <h2 style="color: #111827; margin-bottom: 16px;">Sign in to Aivv</h2>
+                  <p style="color: #4b5563; font-size: 16px; line-height: 1.5; margin-bottom: 24px;">Click the button below to sign in to your Aivv account. This link will expire in 10 minutes.</p>
+                  <div style="margin: 32px 0;">
+                    <a href="${url}" style="background-color: #000; color: #fff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Sign In</a>
+                  </div>
+                  <p style="color: #9ca3af; font-size: 14px; margin-top: 24px;">If you didn't request this link, you can safely ignore this email.</p>
+                  <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
+                  <p style="color: #9ca3af; font-size: 12px; word-break: break-all;">Or copy and paste this link into your browser: <br/> <a href="${url}" style="color: #3b82f6;">${url}</a></p>
                 </div>
-                <p style="color: #9ca3af; font-size: 14px; margin-top: 24px;">If you didn't request this link, you can safely ignore this email.</p>
-                <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 24px 0;" />
-                <p style="color: #9ca3af; font-size: 12px; word-break: break-all;">Or copy and paste this link into your browser: <br/> <a href="${url}" style="color: #3b82f6;">${url}</a></p>
-              </div>
-            `,
-          });
+              `,
+            });
+          } else {
+            console.warn("[AUTH] SMTP_HOST is not configured or is the default example. Skipping email dispatch (sign-in link is printed in terminal above).");
+          }
         } catch (error) {
           console.error("Failed to send magic link email via nodemailer:", error);
-          throw error;
+          if (process.env.NODE_ENV !== "development") {
+            throw error;
+          }
         }
       },
     }),

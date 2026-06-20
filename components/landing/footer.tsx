@@ -35,6 +35,7 @@ export function Footer() {
                 alt="AIVV - Automated Intelligent Virtual Ventures"
                 width={36}
                 height={36}
+                style={{ height: "auto" }}
                 className="rounded-lg"
               />
               <span className="text-xl font-bold tracking-tight text-foreground">
