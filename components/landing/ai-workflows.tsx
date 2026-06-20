@@ -6,8 +6,8 @@ import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Sparkles, Mail, Megaphone, Lock, Check } from "lucide-react";
-import { toast } from "sonner";
+import { Sparkles, Mail, Megaphone, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const teaserCards = [
   {
@@ -28,19 +28,6 @@ const teaserCards = [
 ];
 
 export function AIWorkflows() {
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    setIsSubmitted(true);
-    toast.success("Welcome aboard! We've added you to the waitlist.");
-    setEmail("");
-  };
 
   return (
     <section className="py-24 relative overflow-hidden bg-background/50 border-t border-glass-border">
@@ -57,8 +44,8 @@ export function AIWorkflows() {
             viewport={{ once: true }}
           >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-glass-border bg-glass text-[10px] font-bold text-accent uppercase tracking-wider mb-6">
-              <Sparkles className="size-3 animate-pulse" />
-              Feature Preview
+              <Sparkles className="size-3" />
+              Now Available
             </div>
           </motion.div>
           
@@ -95,12 +82,7 @@ export function AIWorkflows() {
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.15 }}
               >
-                <Card className="relative overflow-hidden border border-glass-border bg-glass-card/45 opacity-70 group transition-all duration-300 hover:opacity-85 select-none h-full">
-                  {/* Locked Coming Soon Overlay Badge */}
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-wider">
-                    <Lock className="size-2.5" />
-                    Locked
-                  </div>
+                <Card className="relative overflow-hidden border border-glass-border bg-glass-card/45 group transition-all duration-300 hover:border-accent/30 h-full">
 
                   <CardContent className="p-8">
                     <div className="size-12 rounded-xl bg-muted/30 border border-glass-border flex items-center justify-center mb-6 text-muted-foreground">
@@ -126,36 +108,19 @@ export function AIWorkflows() {
           className="mt-16 text-center max-w-xl mx-auto space-y-6"
         >
           <div className="space-y-2">
-            <h4 className="text-lg font-bold text-foreground">Be the first to access AI Layers</h4>
+            <h4 className="text-lg font-bold text-foreground">Ready to automate your store?</h4>
             <p className="text-xs md:text-sm text-muted-foreground">
-              Sign up below to secure early beta access. Zero spam, updates only.
+              Sign up today and get access to the AI Automation layer.
             </p>
           </div>
 
-          {!isSubmitted ? (
-            <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              <Input
-                type="email"
-                placeholder="Enter your email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="h-12 rounded-xl glass border border-glass-border focus:border-accent bg-transparent text-center sm:text-left px-4 w-full"
-                required
-              />
-              <Button type="submit" className="h-12 px-8 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl w-full sm:w-auto shrink-0 transition-transform active:scale-95 cursor-pointer">
-                Join Waitlist
-              </Button>
-            </form>
-          ) : (
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-sm"
-            >
-              <Check className="size-4" />
-              You are on the list! We'll email you soon.
-            </motion.div>
-          )}
+          <Link 
+            href="/dashboard/customer/automate" 
+            className="inline-flex items-center justify-center gap-2 h-12 px-8 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl transition-transform active:scale-95 cursor-pointer text-sm"
+          >
+            Start Automating
+            <ArrowRight className="size-4" />
+          </Link>
         </motion.div>
       </Container>
     </section>

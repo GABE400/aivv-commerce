@@ -7,14 +7,14 @@ const dodo = new DodoPayments({
 
 export class DodoPaymentProvider implements PaymentProvider {
   async createCheckoutSession(params: CheckoutSessionParams) {
-    const dodoProductId = process.env.DODO_PRODUCT_ID || "p_mock_123";
+    const defaultDodoProductId = process.env.DODO_PRODUCT_ID || "p_mock_123";
     const session = await dodo.checkoutSessions.create({
       customer: {
         email: params.customer.email,
         name: params.customer.name,
       },
       product_cart: params.items.map((item) => ({
-        product_id: dodoProductId,
+        product_id: item.productId || defaultDodoProductId,
         quantity: item.quantity,
         amount: Math.round(item.price * 100),
       })),

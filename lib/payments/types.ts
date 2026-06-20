@@ -9,6 +9,7 @@ export type CheckoutSessionParams = {
     price: number;
     quantity: number;
     image?: string;
+    productId?: string;
   }[];
   orderId: string;
   metadata?: Record<string, string>;

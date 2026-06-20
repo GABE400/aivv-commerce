@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { PrintifySyncButton } from "@/components/admin/printify-sync-button";
+import { CjSyncButton } from "@/components/admin/cj-sync-button";
 
 export default async function AdminProductsPage() {
   const allProducts = await db.query.products.findMany({
@@ -24,6 +25,7 @@ export default async function AdminProductsPage() {
         </div>
         <div className="flex items-center gap-3">
           <PrintifySyncButton />
+          <CjSyncButton />
           <Link href="/dashboard/admin/products/new">
             <Button className="accent-gradient text-white gap-2 font-bold shadow-lg shadow-accent/20">
               <Plus className="size-4" />

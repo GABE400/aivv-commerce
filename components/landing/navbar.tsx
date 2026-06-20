@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 import * as React from "react";
 import Link from "next/link";
 import { motion, useScroll, useTransform } from "motion/react";
@@ -57,11 +59,16 @@ export function Navbar() {
         <Container>
           <div className="flex h-20 items-center justify-between">
             <Link href="/" className="flex items-center space-x-2">
-              <div className="size-8 rounded-lg accent-gradient flex items-center justify-center font-bold text-white">
-                A
-              </div>
+              <Image
+                src="/logoaivv.svg"
+                alt="AIVV - Automated Intelligent Virtual Ventures"
+                width={36}
+                height={36}
+                className="rounded-lg"
+                priority
+              />
               <span className="text-xl font-bold tracking-tight">
-                Aivv <span className="text-accent text-purple-600 dark:text-purple-400">Commerce OS</span>
+                Automated Intelligent <span className="text-accent text-purple-600 dark:text-purple-400">Virtual Ventures</span>
               </span>
             </Link>
 
@@ -107,7 +114,9 @@ export function Navbar() {
                 </Button>
               )}
               
-              <Button size="sm" className="rounded-xl">Launch Store</Button>
+              <Link href={session ? "/dashboard/customer/automate" : "/signup"}>
+                <Button size="sm" className="rounded-xl">Workflow</Button>
+              </Link>
             </nav>
 
             {/* Mobile Menu Button */}
@@ -168,7 +177,9 @@ export function Navbar() {
                 Sign In
               </Button>
             )}
-            <Button className="w-full">Launch Store</Button>
+            <Link href={session ? "/dashboard/customer/automate" : "/signup"} onClick={() => setIsOpen(false)}>
+              <Button className="w-full">Workflow</Button>
+            </Link>
           </div>
         </motion.div>
       </motion.header>

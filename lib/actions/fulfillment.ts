@@ -43,53 +43,123 @@ export async function routeAutoFulfillmentAction(orderId: string) {
       item => item.variant.product.type === "pod" && item.variant.supplierVariantId
     );
 
-    if (podItems.length === 0) {
-      console.log(`Fulfillment Router: No POD items found in order ${orderId}.`);
+    // Identify Dropship items
+    const dropshipItems = orderData.items.filter(
+      item => item.variant.product.type === "dropship" && item.variant.supplierVariantId
+    );
+
+    if (podItems.length === 0 && dropshipItems.length === 0) {
+      console.log(`Fulfillment Router: No POD or Dropship items found in order ${orderId}.`);
       return;
     }
 
-    // 3. Group by Product for Printify (Printify orders can have multiple variants)
-    // For simplicity, we create one Printify order per storefront order
-    try {
-      const printifyResult = await printify.createOrder({
-        externalId: orderData.id,
-        lineItems: podItems.map(item => ({
-          productId: item.variant.product.supplierProductId || "", // Mapping to printify product id
-          variantId: item.variant.supplierVariantId!,
-          quantity: item.quantity,
-        })),
-        shippingAddress: {
-          firstName: address.firstName || orderData.user.name.split(' ')[0],
-          lastName: address.lastName || orderData.user.name.split(' ').slice(1).join(' ') || "User",
-          email: orderData.user.email,
-          phone: address.phone || "",
-          address1: address.line1,
-          address2: address.line2,
-          city: address.city,
-          region: address.state,
-          zip: address.postalCode,
-          country: address.country,
-        }
-      });
+    // 3. Group by Product for Printify
+    if (podItems.length > 0) {
+      try {
+        const printifyResult = await printify.createOrder({
+          externalId: orderData.id,
+          lineItems: podItems.map(item => ({
+            productId: item.variant.product.supplierProductId || "",
+            variantId: item.variant.supplierVariantId!,
+            quantity: item.quantity,
+          })),
+          shippingAddress: {
+            firstName: address.firstName || orderData.user.name.split(' ')[0],
+            lastName: address.lastName || orderData.user.name.split(' ').slice(1).join(' ') || "User",
+            email: orderData.user.email,
+            phone: address.phone || "",
+            address1: address.line1,
+            address2: address.line2,
+            city: address.city,
+            region: address.state,
+            zip: address.postalCode,
+            country: address.country,
+          }
+        });
 
-      // 4. Update order items with Printify ID
-      if (printifyResult && printifyResult.id) {
+        // 4. Update order items with Printify ID
+        if (printifyResult && printifyResult.id) {
+          for (const item of podItems) {
+              await db.update(orderItems)
+                  .set({ 
+                      supplierOrderId: printifyResult.id,
+                      fulfillmentStatus: "pending" 
+                  })
+                  .where(eq(orderItems.id, item.id));
+          }
+          console.log(`Fulfillment Router: Order ${orderId} successfully pushed to Printify ID ${printifyResult.id}`);
+        }
+      } catch (error: any) {
+        console.error(`Fulfillment Router: Printify submission failed for order ${orderId}`, error);
         for (const item of podItems) {
             await db.update(orderItems)
-                .set({ 
-                    supplierOrderId: printifyResult.id,
-                    fulfillmentStatus: "pending" 
-                })
+                .set({ fulfillmentStatus: "none" }) // Reset or mark as failed
                 .where(eq(orderItems.id, item.id));
         }
-        console.log(`Fulfillment Router: Order ${orderId} successfully pushed to Printify ID ${printifyResult.id}`);
       }
-    } catch (error: any) {
-      console.error(`Fulfillment Router: Printify submission failed for order ${orderId}`, error);
-      // Here we might mark fulfillmentStatus as 'failed' in the DB
     }
+
+    // 4. Group items for CJ Dropshipping
+    if (dropshipItems.length > 0) {
+      try {
+        const { cj } = await import("@/lib/cjdropshipping");
+        const cjResult = await cj.createOrder({
+          orderNumber: orderData.id,
+          shippingCustomerName: `${address.firstName || orderData.user.name.split(' ')[0]} ${address.lastName || orderData.user.name.split(' ').slice(1).join(' ') || "User"}`.trim(),
+          shippingAddress: address.line1,
+          shippingAddress2: address.line2 || "",
+          shippingCity: address.city,
+          shippingProvince: address.state,
+          shippingCountry: address.countryName || address.country || "United States",
+          shippingCountryCode: address.country || "US",
+          shippingZip: address.postalCode,
+          shippingPhone: address.phone || "",
+          products: dropshipItems.map(item => ({
+            vid: item.variant.supplierVariantId!,
+            quantity: item.quantity,
+            storeLineItemId: item.id,
+          })),
+        });
+
+        const cjOrderNumber = cjResult?.data?.cjOrderNumber || cjResult?.result?.cjOrderNumber;
+
+        if (cjOrderNumber) {
+          for (const item of dropshipItems) {
+            await db.update(orderItems)
+              .set({
+                supplierOrderId: cjOrderNumber,
+                fulfillmentStatus: "in_progress",
+              })
+              .where(eq(orderItems.id, item.id));
+          }
+          console.log(`Fulfillment Router: Order ${orderId} successfully pushed to CJ Dropshipping with ID ${cjOrderNumber}`);
+        }
+      } catch (error: any) {
+        console.error(`Fulfillment Router: CJ Dropshipping submission failed for order ${orderId}`, error);
+        for (const item of dropshipItems) {
+            await db.update(orderItems)
+                .set({ fulfillmentStatus: "none" })
+                .where(eq(orderItems.id, item.id));
+        }
+      }
+    }
+
+    // Update overall order status if any of items are now fulfilled or processing
+    await db.update(orders)
+      .set({ status: "processing" })
+      .where(eq(orders.id, orderId));
 
   } catch (error) {
     console.error(`Fulfillment Router: Unexpected error routing order ${orderId}`, error);
+  }
+}
+
+export async function manualFulfillOrderAction(orderId: string) {
+  try {
+    await routeAutoFulfillmentAction(orderId);
+    return { success: true, message: "Fulfillment routing completed." };
+  } catch (error: any) {
+    console.error("Manual Fulfillment Action Error:", error);
+    return { success: false, error: error.message || "Manual fulfillment failed." };
   }
 }

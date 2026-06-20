@@ -47,13 +47,99 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
         name: variant.product.name,
         variantName: variant.name,
         image: variant.product.images[0],
+        type: variant.product.type,
+        supplierProductId: variant.product.supplierProductId,
+        supplierVariantId: variant.supplierVariantId,
       };
     });
+
+    // Calculate shipping rates
+    let shippingFee = 0;
+    const podItems = itemsToCreate.filter(i => i.type === "pod" && i.supplierProductId && i.supplierVariantId);
+    const dropshipItems = itemsToCreate.filter(i => i.type === "dropship" && i.supplierVariantId);
+
+    if (podItems.length > 0 || dropshipItems.length > 0) {
+      // Import clients inside function to prevent circular imports if any
+      const { printify } = await import("@/lib/printify");
+      const { cj } = await import("@/lib/cjdropshipping");
+
+      // 1. Fetch shipping address (use last order address or default fallback)
+      const lastOrder = await db.query.orders.findFirst({
+        where: eq(orders.userId, session.user.id),
+        orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+      });
+      
+      let shippingAddress = {
+        firstName: session.user.name.split(" ")[0] || "Guest",
+        lastName: session.user.name.split(" ").slice(1).join(" ") || "User",
+        address1: "123 Main St",
+        city: "New York",
+        region: "NY",
+        zip: "10001",
+        country: "US",
+      };
+
+      if (lastOrder && lastOrder.shippingAddress) {
+        try {
+          const parsed = JSON.parse(lastOrder.shippingAddress);
+          if (parsed.country) {
+            shippingAddress = {
+              firstName: parsed.firstName || shippingAddress.firstName,
+              lastName: parsed.lastName || shippingAddress.lastName,
+              address1: parsed.line1 || parsed.address1 || shippingAddress.address1,
+              city: parsed.city || shippingAddress.city,
+              region: parsed.state || parsed.region || shippingAddress.region,
+              zip: parsed.postalCode || parsed.zip || shippingAddress.zip,
+              country: parsed.country || shippingAddress.country,
+            };
+          }
+        } catch (e) {
+          console.error("Error parsing last order shipping address:", e);
+        }
+      }
+
+      // Calculate Printify Shipping
+      if (podItems.length > 0) {
+        try {
+          const printifyShipping = await printify.calculateShippingRates({
+            lineItems: podItems.map(item => ({
+              productId: item.supplierProductId!,
+              variantId: item.supplierVariantId!,
+              quantity: item.quantity,
+            })),
+            shippingAddress,
+          });
+          shippingFee += printifyShipping;
+        } catch (err) {
+          console.error("Error calculating Printify shipping fee:", err);
+          shippingFee += 5.99; // fallback
+        }
+      }
+
+      // Calculate CJ Shipping
+      if (dropshipItems.length > 0) {
+        try {
+          const cjShipping = await cj.calculateShippingRates({
+            endCountryCode: shippingAddress.country,
+            products: dropshipItems.map(item => ({
+              vid: item.supplierVariantId!,
+              quantity: item.quantity,
+            })),
+          });
+          shippingFee += cjShipping;
+        } catch (err) {
+          console.error("Error calculating CJ shipping fee:", err);
+          shippingFee += 6.99; // fallback
+        }
+      }
+    }
+
+    total += shippingFee;
 
     // 2. Create Order in DB (Pending)
     const [newOrder] = await db.insert(orders).values({
       userId: session.user.id,
-      totalAmount: total.toString(),
+      totalAmount: total.toFixed(2),
       status: "pending",
       paymentStatus: "unpaid",
     }).returning();
@@ -69,18 +155,31 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
     );
 
     // 4. Trigger Dodo Payments
+    const checkoutItems = itemsToCreate.map(item => ({
+      name: `${item.name} (${item.variantName})`,
+      price: parseFloat(item.price),
+      quantity: item.quantity,
+      image: item.image,
+      productId: process.env.DODO_ECOMMERCE_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
+    }));
+
+    if (shippingFee > 0) {
+      checkoutItems.push({
+        name: "Shipping & Fulfillment Fee",
+        price: parseFloat(shippingFee.toFixed(2)),
+        quantity: 1,
+        image: undefined as any,
+        productId: process.env.DODO_ECOMMERCE_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
+      });
+    }
+
     const checkout = await paymentProvider.createCheckoutSession({
       orderId: newOrder.id,
       customer: {
         email: session.user.email,
         name: session.user.name,
       },
-      items: itemsToCreate.map(item => ({
-        name: `${item.name} (${item.variantName})`,
-        price: parseFloat(item.price),
-        quantity: item.quantity,
-        image: item.image,
-      })),
+      items: checkoutItems,
       metadata: {
         userId: session.user.id
       }

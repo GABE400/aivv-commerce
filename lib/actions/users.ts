@@ -1,12 +1,23 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { users, supplierApplications, orders } from "@/lib/db/schema";
+import { users, supplierApplications, orders, orderItems, subscriptions, aiApiKeys, userWorkflows, workflowTemplates, workflowExecutions, sessions, accounts, products } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { paymentProvider } from "@/lib/payments/dodo";
+import { encrypt } from "@/lib/encryption";
+
+function getProviderFromModel(model: string) {
+  if (model.includes("openrouter") || model.startsWith("openrouter/")) return "openrouter";
+  if (model.includes("claude")) return "anthropic";
+  if (model.includes("gpt")) return "openai";
+  if (model.includes("llama")) return "groq";
+  if (model.includes("deepseek")) return "deepseek";
+  if (model.includes("gemini")) return "gemini";
+  return "unknown";
+}
 
 export async function acceptTermsAction() {
   const session = await auth.api.getSession({
@@ -36,6 +47,19 @@ export async function createUpgradeCheckoutAction(data: {
   website?: string;
   description?: string;
   plan: "starter" | "growth" | "agency";
+  apiKeys: {
+    anthropic?: string;
+    openai?: string;
+    groq?: string;
+    deepseek?: string;
+    gemini?: string;
+    openrouter?: string;
+  };
+  workflows: {
+    productModel: string;
+    emailModel: string;
+    inventoryModel: string;
+  };
 }) {
   const session = await auth.api.getSession({
     headers: await headers()
@@ -57,15 +81,65 @@ export async function createUpgradeCheckoutAction(data: {
   }
 
   try {
-    // 1. Admin bypass: if user has role 'admin', upgrade immediately and skip payment
-    if (session.user.role === "admin") {
-      await db.transaction(async (tx) => {
-        // Upgrade role to supplier
+    // Shared: Setup API Keys & Workflows
+    await db.transaction(async (tx) => {
+      // 1. Insert API Keys
+      const keysToInsert = [];
+      const providers = ["anthropic", "openai", "groq", "deepseek", "gemini", "openrouter"] as const;
+      for (const provider of providers) {
+        const key = data.apiKeys[provider];
+        if (key) {
+          const { encrypted, iv } = encrypt(key);
+          keysToInsert.push({ userId: session.user.id, provider, encryptedKey: encrypted, iv });
+        }
+      }
+      if (keysToInsert.length > 0) {
+        await tx.insert(aiApiKeys).values(keysToInsert);
+      }
+
+      // 2. Fetch templates
+      const templates = await tx.select().from(workflowTemplates);
+      const tMap = templates.reduce((acc, t) => {
+        acc[t.slug] = t.id;
+        return acc;
+      }, {} as Record<string, string>);
+
+      // 3. Insert Workflows
+      const workflowsToInsert = [];
+      if (data.workflows.productModel !== "none" && tMap["product-copy"]) {
+        workflowsToInsert.push({
+          userId: session.user.id,
+          templateId: tMap["product-copy"],
+          provider: getProviderFromModel(data.workflows.productModel),
+          model: data.workflows.productModel,
+        });
+      }
+      if (data.workflows.emailModel !== "none" && tMap["email-responder"]) {
+        workflowsToInsert.push({
+          userId: session.user.id,
+          templateId: tMap["email-responder"],
+          provider: getProviderFromModel(data.workflows.emailModel),
+          model: data.workflows.emailModel,
+        });
+      }
+      if (data.workflows.inventoryModel !== "none" && tMap["inventory-sync"]) {
+        workflowsToInsert.push({
+          userId: session.user.id,
+          templateId: tMap["inventory-sync"],
+          provider: getProviderFromModel(data.workflows.inventoryModel),
+          model: data.workflows.inventoryModel,
+        });
+      }
+      if (workflowsToInsert.length > 0) {
+        await tx.insert(userWorkflows).values(workflowsToInsert);
+      }
+
+      // 4. Admin bypass: if user has role 'admin', upgrade immediately and skip payment
+      if (session.user.role === "admin") {
         await tx.update(users)
           .set({ role: "supplier" })
           .where(eq(users.id, session.user.id));
 
-        // Insert approved supplier application
         await tx.insert(supplierApplications).values({
           userId: session.user.id,
           storeName: data.storeName,
@@ -73,16 +147,30 @@ export async function createUpgradeCheckoutAction(data: {
           description: `${data.description} (Admin Free Access Upgrade)`,
           status: "approved",
         });
-      });
 
+        await tx.insert(subscriptions).values({
+          userId: session.user.id,
+          plan: data.plan,
+          status: "active", // Immediate active for admin
+        });
+      } else {
+        // Create pending subscription for shopper flow
+        await tx.insert(subscriptions).values({
+          userId: session.user.id,
+          plan: data.plan,
+          status: "trialing", // Pending payment
+        });
+      }
+    });
+
+    if (session.user.role === "admin") {
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/customer");
       revalidatePath("/dashboard/supplier");
-
       return { success: true, bypassPayment: true };
     }
 
-    // 2. Shopper flow: Create pending order for checkout tracking
+    // 5. Shopper flow: Create pending order for checkout tracking
     const [newOrder] = await db.insert(orders).values({
       userId: session.user.id,
       totalAmount: planPrice.toString(),
@@ -90,18 +178,25 @@ export async function createUpgradeCheckoutAction(data: {
       paymentStatus: "unpaid",
     }).returning();
 
-    // 3. Trigger Dodo Payments checkout session
+    const planProductIds = {
+      starter: process.env.DODO_STARTER_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
+      growth: process.env.DODO_GROWTH_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
+      agency: process.env.DODO_AGENCY_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
+    };
+
+    // 6. Trigger Dodo Payments checkout session
     const checkout = await paymentProvider.createCheckoutSession({
       orderId: newOrder.id,
       customer: {
         email: session.user.email,
-        name: session.user.name,
+        name: session.user.name || "Customer",
       },
       items: [
         {
-          name: `Aivv Business AI Subscription (${data.plan.toUpperCase()})`,
+          name: `${data.plan.toUpperCase()} Plan Subscription`,
           price: planPrice,
           quantity: 1,
+          productId: planProductIds[data.plan],
         }
       ],
       metadata: {
@@ -114,7 +209,7 @@ export async function createUpgradeCheckoutAction(data: {
       }
     });
 
-    // 4. Update order with dodo checkout ID
+    // 7. Update order with dodo checkout ID
     await db.update(orders)
       .set({ dodoCheckoutId: checkout.id })
       .where(eq(orders.id, newOrder.id));
@@ -123,5 +218,85 @@ export async function createUpgradeCheckoutAction(data: {
   } catch (error: any) {
     console.error("Create Upgrade Checkout Error:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function updateUserRoleAction(targetUserId: string, newRole: "admin" | "supplier" | "customer") {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session || session.user.role !== "admin") {
+    return { success: false, error: "Unauthorized. Admin role required." };
+  }
+
+  // Prevent admin from changing their own role (accidental lockout)
+  if (session.user.id === targetUserId) {
+    return { success: false, error: "You cannot change your own admin role." };
+  }
+
+  try {
+    await db.update(users)
+      .set({ role: newRole })
+      .where(eq(users.id, targetUserId));
+
+    revalidatePath("/dashboard/admin/users");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to update user role:", error);
+    return { success: false, error: error.message || "Failed to update user role" };
+  }
+}
+
+export async function deleteUserAction(targetUserId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session || session.user.role !== "admin") {
+    return { success: false, error: "Unauthorized. Admin role required." };
+  }
+
+  // Prevent self-deletion
+  if (session.user.id === targetUserId) {
+    return { success: false, error: "You cannot delete your own admin account." };
+  }
+
+  try {
+    // 1. Set products.supplierId = null for any products linked to this user
+    await db.update(products)
+      .set({ supplierId: null })
+      .where(eq(products.supplierId, targetUserId));
+
+    // 2. Delete executions & workflows
+    // Since executions reference userWorkflows, delete executions first
+    await db.delete(workflowExecutions).where(eq(workflowExecutions.userId, targetUserId));
+    await db.delete(userWorkflows).where(eq(userWorkflows.userId, targetUserId));
+
+    // 3. Delete api keys, subscriptions, supplier applications, accounts, sessions
+    await db.delete(aiApiKeys).where(eq(aiApiKeys.userId, targetUserId));
+    await db.delete(subscriptions).where(eq(subscriptions.userId, targetUserId));
+    await db.delete(supplierApplications).where(eq(supplierApplications.userId, targetUserId));
+    
+    // 4. Delete orders & order items
+    // First find orders for this user to delete their orderItems
+    const userOrders = await db.select({ id: orders.id }).from(orders).where(eq(orders.userId, targetUserId));
+    for (const o of userOrders) {
+      await db.delete(orderItems).where(eq(orderItems.orderId, o.id));
+    }
+    await db.delete(orders).where(eq(orders.userId, targetUserId));
+
+    // 5. Delete accounts and sessions
+    await db.delete(accounts).where(eq(accounts.userId, targetUserId));
+    await db.delete(sessions).where(eq(sessions.userId, targetUserId));
+
+    // 6. Delete user
+    await db.delete(users).where(eq(users.id, targetUserId));
+
+    revalidatePath("/dashboard/admin/users");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to delete user:", error);
+    return { success: false, error: error.message || "Failed to delete user" };
   }
 }

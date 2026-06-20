@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
+import { getUserSubscription } from "@/lib/actions/ai";
 
 export default async function CustomerDashboard() {
   const session = await auth.api.getSession({
@@ -24,6 +25,8 @@ export default async function CustomerDashboard() {
   }
 
   const userId = session.user.id;
+  const subscription = await getUserSubscription();
+  const showAutomateLabel = !!(subscription && subscription.status === "active");
 
   // Fetch real data
   const userOrders = await db.query.orders.findMany({
@@ -135,7 +138,7 @@ export default async function CustomerDashboard() {
           <div className="mt-4">
             <Link href="/dashboard/customer/automate">
               <Button className="w-full h-9 text-xs font-bold accent-gradient text-white rounded-xl shadow-md shadow-accent/15">
-                Upgrade & Automate
+                {showAutomateLabel ? "Automate your workflows" : "Upgrade & Automate"}
               </Button>
             </Link>
           </div>

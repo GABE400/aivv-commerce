@@ -8,6 +8,10 @@ export const orderStatusEnum = pgEnum("order_status", ["pending", "processing", 
 export const paymentStatusEnum = pgEnum("payment_status", ["unpaid", "paid", "refunded", "failed"]);
 export const fulfillmentStatusEnum = pgEnum("fulfillment_status", ["none", "pending", "in_progress", "shipped", "delivered"]);
 export const applicationStatusEnum = pgEnum("application_status", ["pending", "approved", "rejected"]);
+export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "past_due", "cancelled", "expired", "trialing"]);
+export const subscriptionPlanEnum = pgEnum("subscription_plan", ["starter", "growth", "agency"]);
+export const workflowStatusEnum = pgEnum("workflow_status", ["active", "paused", "error"]);
+export const executionStatusEnum = pgEnum("execution_status", ["pending", "running", "completed", "failed"]);
 
 // Better Auth Tables (Extended)
 export const users = pgTable("user", {
@@ -132,7 +136,78 @@ export const supplierApplications = pgTable("supplier_application", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
+export const subscriptions = pgTable("subscription", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId").notNull().references(() => users.id),
+  plan: subscriptionPlanEnum("plan").notNull(),
+  status: subscriptionStatusEnum("status").notNull().default("trialing"),
+  currentPeriodStart: timestamp("currentPeriodStart"),
+  currentPeriodEnd: timestamp("currentPeriodEnd"),
+  dodoSubscriptionId: text("dodoSubscriptionId"),
+  cancelledAt: timestamp("cancelledAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const aiApiKeys = pgTable("ai_api_key", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId").notNull().references(() => users.id),
+  provider: text("provider").notNull(), // anthropic, openai, groq, deepseek, gemini
+  encryptedKey: text("encryptedKey").notNull(),
+  iv: text("iv").notNull(),
+  label: text("label"),
+  isValid: boolean("isValid").default(true),
+  lastValidatedAt: timestamp("lastValidatedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const workflowTemplates = pgTable("workflow_template", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category").notNull(),
+  defaultModel: text("defaultModel"),
+  defaultProvider: text("defaultProvider"),
+  promptTemplate: text("promptTemplate").notNull(),
+  inputSchema: text("inputSchema"), // JSON string representing Zod schema or fields
+  outputSchema: text("outputSchema"), // JSON string
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const userWorkflows = pgTable("user_workflow", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId").notNull().references(() => users.id),
+  templateId: uuid("templateId").notNull().references(() => workflowTemplates.id),
+  provider: text("provider").notNull(),
+  model: text("model").notNull(),
+  customPrompt: text("customPrompt"),
+  status: workflowStatusEnum("status").notNull().default("active"),
+  config: text("config"), // JSON
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const workflowExecutions = pgTable("workflow_execution", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userWorkflowId: uuid("userWorkflowId").notNull().references(() => userWorkflows.id),
+  userId: text("userId").notNull().references(() => users.id),
+  input: text("input"), // JSON
+  output: text("output"), // JSON
+  tokensUsed: integer("tokensUsed"),
+  durationMs: integer("durationMs"),
+  status: executionStatusEnum("status").notNull().default("pending"),
+  error: text("error"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
 // Relations
+export const categoryRelations = relations(categories, ({ many }) => ({
+  products: many(products),
+}));
+
 export const productRelations = relations(products, ({ one, many }) => ({
   category: one(categories, {
     fields: [products.categoryId],
@@ -174,6 +249,43 @@ export const orderItemRelations = relations(orderItems, ({ one }) => ({
 export const applicationRelations = relations(supplierApplications, ({ one }) => ({
   user: one(users, {
     fields: [supplierApplications.userId],
+    references: [users.id],
+  }),
+}));
+
+export const subscriptionRelations = relations(subscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+}));
+
+export const aiApiKeyRelations = relations(aiApiKeys, ({ one }) => ({
+  user: one(users, {
+    fields: [aiApiKeys.userId],
+    references: [users.id],
+  }),
+}));
+
+export const userWorkflowRelations = relations(userWorkflows, ({ one, many }) => ({
+  user: one(users, {
+    fields: [userWorkflows.userId],
+    references: [users.id],
+  }),
+  template: one(workflowTemplates, {
+    fields: [userWorkflows.templateId],
+    references: [workflowTemplates.id],
+  }),
+  executions: many(workflowExecutions),
+}));
+
+export const workflowExecutionRelations = relations(workflowExecutions, ({ one }) => ({
+  userWorkflow: one(userWorkflows, {
+    fields: [workflowExecutions.userWorkflowId],
+    references: [userWorkflows.id],
+  }),
+  user: one(users, {
+    fields: [workflowExecutions.userId],
     references: [users.id],
   }),
 }));

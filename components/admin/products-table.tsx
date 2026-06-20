@@ -1,16 +1,47 @@
 "use client";
 
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2 } from "lucide-react";
+import { Edit2, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { deleteProductAction } from "@/lib/actions/products";
+import { toast } from "sonner";
 
 interface ProductsTableProps {
   data: any[];
 }
 
 export function ProductsTable({ data }: ProductsTableProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const handleDelete = (productId: string, productName: string) => {
+    if (!window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingId(productId);
+    startTransition(async () => {
+      try {
+        const res = await deleteProductAction(productId) as any;
+        if (res.success) {
+          toast.success(`Successfully deleted ${productName}.`);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to delete product.");
+        }
+      } catch (err) {
+        toast.error("An unexpected error occurred.");
+      } finally {
+        setDeletingId(null);
+      }
+    });
+  };
+
   const columns = [
     {
       header: "Product",
@@ -102,8 +133,18 @@ export function ProductsTable({ data }: ProductsTableProps) {
               </Button>
             </div>
           )}
-          <Button variant="ghost" size="icon" className="size-8 h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10">
-            <Trash2 className="size-3.5" />
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            disabled={isPending && deletingId === row.id}
+            onClick={() => handleDelete(row.id, row.name)}
+            className="size-8 h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 disabled:opacity-40"
+          >
+            {isPending && deletingId === row.id ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="size-3.5" />
+            )}
           </Button>
         </div>
       ),

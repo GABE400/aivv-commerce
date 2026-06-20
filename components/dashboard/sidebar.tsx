@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { 
   LayoutDashboard, 
@@ -13,7 +14,8 @@ import {
   Truck,
   Box,
   ShoppingBag,
-  Sparkles
+  Sparkles,
+  Layers
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -26,8 +28,11 @@ export function Sidebar({ user }: { user: any }) {
   const adminLinks = [
     { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
     { name: "Products", href: "/dashboard/admin/products", icon: Package },
+    { name: "Categories", href: "/dashboard/admin/categories", icon: Layers },
     { name: "Orders", href: "/dashboard/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/dashboard/admin/users", icon: Users },
+    { name: "User Dashboard", href: "/dashboard/customer", icon: ShoppingBag },
+    { name: "Business Dashboard", href: "/dashboard/supplier", icon: Box },
   ];
 
   const supplierLinks = [
@@ -59,7 +64,13 @@ export function Sidebar({ user }: { user: any }) {
         {/* Logo Area */}
         <div className="flex h-20 items-center px-8">
           <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold">A</div>
+            <Image
+              src="/logoaivv.svg"
+              alt="AIVV"
+              width={32}
+              height={32}
+              className="rounded-lg"
+            />
             <span className="text-lg font-bold">Aivv <span className="text-accent">OS</span></span>
           </Link>
         </div>

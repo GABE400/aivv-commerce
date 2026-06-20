@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { orders, users, supplierApplications } from "@/lib/db/schema";
+import { orders, users, supplierApplications, subscriptions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { paymentProvider } from "@/lib/payments/dodo";
@@ -48,6 +48,16 @@ export async function POST(req: Request) {
               updatedAt: new Date()
             })
             .where(eq(orders.id, orderId));
+
+          // 4. Activate the subscription
+          await tx.update(subscriptions)
+            .set({
+              status: "active",
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+              updatedAt: new Date()
+            })
+            .where(eq(subscriptions.userId, metadata.userId));
         });
 
         console.log(`Subscription order ${orderId} successfully processed. User ${metadata.userId} upgraded to ${metadata.plan}.`);

@@ -92,6 +92,68 @@ class PrintifyClient {
   async getProducts() {
     return this.fetchPrintify(`/shops/${this.shopId}/products.json`);
   }
+
+  async calculateShippingRates(params: {
+    lineItems: { productId: string; variantId: string; quantity: number }[];
+    shippingAddress: {
+      firstName: string;
+      lastName: string;
+      email?: string;
+      phone?: string;
+      address1: string;
+      address2?: string;
+      city: string;
+      region: string;
+      zip: string;
+      country: string;
+    };
+  }): Promise<number> {
+    const payload = {
+      line_items: params.lineItems.map(item => ({
+        product_id: item.productId,
+        variant_id: parseInt(item.variantId) || item.variantId,
+        quantity: item.quantity,
+      })),
+      address_to: {
+        first_name: params.shippingAddress.firstName,
+        last_name: params.shippingAddress.lastName,
+        email: params.shippingAddress.email || "",
+        phone: params.shippingAddress.phone || "",
+        address1: params.shippingAddress.address1,
+        address2: params.shippingAddress.address2 || "",
+        city: params.shippingAddress.city,
+        region: params.shippingAddress.region,
+        zip: params.shippingAddress.zip,
+        country: params.shippingAddress.country,
+      },
+    };
+
+    try {
+      const response = await this.fetchPrintify(`/shops/${this.shopId}/orders/shipping.json`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+
+      if (response) {
+        if (typeof response.standard === "number") {
+          return response.standard / 100;
+        }
+        if (response.standard && typeof response.standard.cost === "number") {
+          return response.standard.cost / 100;
+        }
+        const keys = Object.keys(response);
+        if (keys.length > 0) {
+          const val = response[keys[0]];
+          if (typeof val === "number") return val / 100;
+          if (val && typeof val.cost === "number") return val.cost / 100;
+        }
+      }
+      return 0;
+    } catch (error) {
+      console.error("Printify Shipping Calculation Error:", error);
+      return 0;
+    }
+  }
 }
 
 export const printify = new PrintifyClient();

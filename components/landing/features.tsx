@@ -68,7 +68,7 @@ export function Features() {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground"
           >
-            Aivv Commerce OS provides everything you need to build and scale your 
+            Automated Intelligent Virtual Ventures provides everything you need to build and scale your 
             e-commerce empire without the operational overhead.
           </motion.p>
         </div>
@@ -118,7 +118,7 @@ export function Features() {
                   Global payments, handled.
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                  Aivv Commerce OS integrates with Dodo Payments — your Merchant of Record for automatic tax compliance, multi-currency checkout, and global payouts. Sell anywhere, comply everywhere.
+                  Automated Intelligent Virtual Ventures integrates with Dodo Payments — your Merchant of Record for automatic tax compliance, multi-currency checkout, and global payouts. Sell anywhere, comply everywhere.
                 </p>
               </div>
 

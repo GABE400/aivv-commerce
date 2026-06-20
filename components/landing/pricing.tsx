@@ -3,15 +3,17 @@
 import { useState } from "react";
 import { motion } from "motion/react";
 import { Container } from "@/components/ui/container";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import Link from "next/link";
 
 const automationTiers = [
   {
+    id: "starter",
     name: "Starter",
     price: "$29",
     description: "Ideal for individuals starting out with business automation.",
@@ -25,6 +27,7 @@ const automationTiers = [
     highlighted: false,
   },
   {
+    id: "growth",
     name: "Growth",
     price: "$79",
     description: "Perfect for scaling businesses and operators.",
@@ -38,6 +41,7 @@ const automationTiers = [
     highlighted: true,
   },
   {
+    id: "agency",
     name: "Agency",
     price: "$199",
     description: "Full suite for power-users, enterprises, and local teams.",
@@ -130,12 +134,15 @@ export function Pricing() {
                       ))}
                     </ul>
 
-                    <Button 
-                      className="w-full font-bold" 
-                      variant={tier.highlighted ? "primary" : "outline"}
+                    <Link 
+                      href={`/dashboard/customer/automate?plan=${tier.id}`}
+                      className={cn(
+                        buttonVariants({ variant: tier.highlighted ? "primary" : "outline" }),
+                        "w-full font-bold inline-flex items-center justify-center"
+                      )}
                     >
                       {tier.cta}
-                    </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               </motion.div>

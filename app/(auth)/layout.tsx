@@ -38,7 +38,7 @@ export default function AuthLayout({
       </main>
       
       <footer className="h-20 flex items-center justify-center px-8 text-xs text-muted-foreground">
-        © 2026 Aivv Commerce OS. All rights reserved.
+        © 2026 Automated Intelligent Virtual Ventures. All rights reserved.
       </footer>
     </div>
   );

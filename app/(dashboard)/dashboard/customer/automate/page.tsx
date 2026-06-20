@@ -1,410 +1,111 @@
-"use client";
-
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect, Suspense } from "react";
-import { createUpgradeCheckoutAction } from "@/lib/actions/users";
-import { toast } from "sonner";
-import { useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, Loader2, Sparkles, Key, Bot, DollarSign, Check } from "lucide-react";
+import { Suspense } from "react";
+import { getUserSubscription } from "@/lib/actions/ai";
+import AutomateUpgradePage from "./upgrade-form";
+import { Loader2, LayoutDashboard, Settings, Key, Zap, List } from "lucide-react";
 import Link from "next/link";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
-const upgradeSchema = z.object({
-  storeName: z.string().min(2, "Business name must be at least 2 characters"),
-  website: z.string().url("Please enter a valid URL").optional().or(z.literal("")),
-  description: z.string().min(10, "Please describe your business or automation goals"),
-  anthropicKey: z.string().optional(),
-  openaiKey: z.string().optional(),
-  groqKey: z.string().optional(),
-  deepseekKey: z.string().optional(),
-  geminiKey: z.string().optional(),
-  productModel: z.enum(["claude-3-5-sonnet", "gpt-4o", "llama-3-groq", "deepseek-v3", "gemini-1-5-pro", "none"]),
-  emailModel: z.enum(["claude-3-5-sonnet", "gpt-4o", "llama-3-groq", "deepseek-v3", "gemini-1-5-pro", "none"]),
-  inventoryModel: z.enum(["claude-3-5-sonnet", "gpt-4o", "llama-3-groq", "deepseek-v3", "gemini-1-5-pro", "none"]),
-  plan: z.enum(["starter", "growth", "agency"]),
-  agreeUpgrade: z.boolean().refine((val) => val === true, {
-    message: "You must agree to upgrade your account",
-  }),
-});
+export default async function AutomatePage() {
+  const subscription = await getUserSubscription();
 
-type UpgradeFormValues = z.infer<typeof upgradeSchema>;
-
-function AutomateUpgradeForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [isLoading, setIsLoading] = useState(false);
-
-  const queryBusinessName = searchParams.get("businessName") || "";
-
-  const form = useForm<UpgradeFormValues>({
-    resolver: zodResolver(upgradeSchema),
-    defaultValues: {
-      storeName: queryBusinessName,
-      website: "",
-      description: "",
-      anthropicKey: "",
-      openaiKey: "",
-      groqKey: "",
-      deepseekKey: "",
-      geminiKey: "",
-      productModel: "claude-3-5-sonnet",
-      emailModel: "gpt-4o",
-      inventoryModel: "none",
-      plan: "growth",
-      agreeUpgrade: false,
-    },
-  });
-
-  // Pre-fill business/company name if present in query parameters
-  useEffect(() => {
-    if (queryBusinessName) {
-      form.setValue("storeName", queryBusinessName);
-    }
-  }, [queryBusinessName, form]);
-
-  const plan = form.watch("plan");
-
-  const onSubmit = async (data: UpgradeFormValues) => {
-    // Helper function to check if a specific model provider requires a key
-    const checkKeyRequirement = (model: string, providerName: string, keyVal?: string) => {
-      const isModelUsed = data.productModel === model || data.emailModel === model || data.inventoryModel === model;
-      if (isModelUsed && !keyVal) {
-        toast.error(`Please provide an API Key for ${providerName} to use its models.`);
-        return false;
-      }
-      return true;
-    };
-
-    if (!checkKeyRequirement("claude-3-5-sonnet", "Anthropic", data.anthropicKey)) return;
-    if (!checkKeyRequirement("gpt-4o", "OpenAI", data.openaiKey)) return;
-    if (!checkKeyRequirement("llama-3-groq", "Groq", data.groqKey)) return;
-    if (!checkKeyRequirement("deepseek-v3", "DeepSeek", data.deepseekKey)) return;
-    if (!checkKeyRequirement("gemini-1-5-pro", "Google Gemini", data.geminiKey)) return;
-
-    setIsLoading(true);
-    try {
-      const summaryDescription = `${data.description} | AI Task Config: [Product Copy: ${data.productModel}] [Emails: ${data.emailModel}] [Inventory: ${data.inventoryModel}] | Configured Providers: ` +
-        `[Anthropic: ${data.anthropicKey ? "Yes" : "No"}] ` +
-        `[OpenAI: ${data.openaiKey ? "Yes" : "No"}] ` +
-        `[Groq: ${data.groqKey ? "Yes" : "No"}] ` +
-        `[DeepSeek: ${data.deepseekKey ? "Yes" : "No"}] ` +
-        `[Gemini: ${data.geminiKey ? "Yes" : "No"}]`;
-
-      const result = await createUpgradeCheckoutAction({
-        storeName: data.storeName,
-        website: data.website,
-        description: summaryDescription,
-        plan: data.plan,
-      });
-
-      if (result.success) {
-        if (result.bypassPayment) {
-          toast.success("Account upgraded successfully (Admin Free Access)!");
-          window.location.href = "/dashboard";
-        } else if (result.url) {
-          toast.success("Checkout session created. Redirecting to payment...");
-          window.location.href = result.url;
-        } else {
-          toast.error("Failed to generate checkout link.");
-        }
-      } else {
-        toast.error(result.error || "Failed to upgrade account");
-      }
-    } catch (error) {
-      toast.error("Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  if (!subscription || subscription.status !== "active") {
+    return <AutomateUpgradePage />;
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8">
-      <div className="flex flex-col gap-4">
-        <Link 
-          href="/dashboard" 
-          className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-accent transition-colors"
-        >
-          <ChevronLeft className="size-4 mr-1" />
-          Back to Dashboard
+    <div className="max-w-6xl mx-auto space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold">AI Automation Console</h1>
+        <p className="text-muted-foreground mt-2">Manage your active workflows, API keys, and monitor usage.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Subscription Info */}
+        <Card className="glass border-glass-border">
+          <CardHeader>
+            <CardTitle className="text-lg">Subscription</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Current Plan</span>
+                <Badge variant="secondary" className="uppercase">{subscription.plan}</Badge>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <Badge className="bg-green-500/10 text-green-500 border-green-500/20">{subscription.status}</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Link href="/dashboard/customer/automate/keys" className="block">
+          <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer h-full">
+            <CardContent className="pt-6 flex flex-col items-center justify-center text-center h-full gap-2">
+              <div className="p-3 bg-accent/10 rounded-full">
+                <Key className="size-6 text-accent" />
+              </div>
+              <div className="font-semibold mt-2">Manage API Keys</div>
+              <div className="text-xs text-muted-foreground">Add or update provider keys</div>
+            </CardContent>
+          </Card>
         </Link>
-        <div>
-          <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Upgrade Account</h2>
-          <h1 className="text-3xl font-bold">Turn into a Business</h1>
+
+        <Link href="/dashboard/customer/automate/history" className="block">
+          <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer h-full">
+            <CardContent className="pt-6 flex flex-col items-center justify-center text-center h-full gap-2">
+              <div className="p-3 bg-accent/10 rounded-full">
+                <List className="size-6 text-accent" />
+              </div>
+              <div className="font-semibold mt-2">Execution History</div>
+              <div className="text-xs text-muted-foreground">View logs and token usage</div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Zap className="size-5 text-accent" />
+          Active Workflows
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link href="/dashboard/customer/automate/product-copy">
+             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
+               <CardHeader>
+                 <CardTitle className="text-lg">Product Copywriter</CardTitle>
+                 <CardDescription>Generate item names, titles, and SEO meta tags.</CardDescription>
+               </CardHeader>
+               <CardContent>
+                 <Badge variant="outline">Configured</Badge>
+               </CardContent>
+             </Card>
+          </Link>
+          <Link href="/dashboard/customer/automate/email-responder">
+             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
+               <CardHeader>
+                 <CardTitle className="text-lg">Email Auto-Responder</CardTitle>
+                 <CardDescription>Handles shipment notifications and buyer tracking support.</CardDescription>
+               </CardHeader>
+               <CardContent>
+                 <Badge variant="outline">Configured</Badge>
+               </CardContent>
+             </Card>
+          </Link>
+          <Link href="/dashboard/customer/automate/inventory-sync">
+             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
+               <CardHeader>
+                 <CardTitle className="text-lg">Inventory Mapping</CardTitle>
+                 <CardDescription>Correlates Printify product options to local variants.</CardDescription>
+               </CardHeader>
+               <CardContent>
+                 <Badge variant="outline">Configured</Badge>
+               </CardContent>
+             </Card>
+          </Link>
         </div>
       </div>
-
-      <Card className="glass border-glass-border">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="size-5 text-accent animate-pulse" />
-            AI Automation Setup
-          </CardTitle>
-          <CardDescription>
-            Provide details about your business, select a subscription plan, and configure your task-specific AI models.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="storeName">Business / Company Name</Label>
-              <Input 
-                id="storeName" 
-                {...form.register("storeName")} 
-                placeholder="e.g. Acme Automation Corp" 
-                className="glass border-glass-border"
-              />
-              {form.formState.errors.storeName && (
-                <p className="text-xs text-red-500">{form.formState.errors.storeName.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="website">Website or Social Handle (Optional)</Label>
-              <Input 
-                id="website" 
-                {...form.register("website")} 
-                placeholder="https://mybusiness.com" 
-                className="glass border-glass-border"
-              />
-              {form.formState.errors.website && (
-                <p className="text-xs text-red-500">{form.formState.errors.website.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Business Overview & Goals</Label>
-              <textarea 
-                id="description" 
-                {...form.register("description")}
-                className="w-full min-h-[100px] rounded-xl glass border border-glass-border bg-transparent p-4 text-sm focus:border-accent outline-none"
-                placeholder="Brief description of what your business does..."
-              />
-              {form.formState.errors.description && (
-                <p className="text-xs text-red-500">{form.formState.errors.description.message}</p>
-              )}
-            </div>
-
-            {/* Plan Selection Cards */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <DollarSign className="size-4 text-accent" />
-                <span>1. Select Subscription Tier</span>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {[
-                  { id: "starter", name: "Starter Plan", price: "$29/mo", desc: "5 workflows, 1 API Key, remote guides." },
-                  { id: "growth", name: "Growth Plan", price: "$79/mo", desc: "20 workflows, unlimited API Keys, Webhooks." },
-                  { id: "agency", name: "Agency Plan", price: "$199/mo", desc: "Unlimited workflows, team logs, custom setups." }
-                ].map((tier) => {
-                  const isSelected = plan === tier.id;
-                  return (
-                    <button
-                      key={tier.id}
-                      type="button"
-                      onClick={() => form.setValue("plan", tier.id as any)}
-                      className={`relative p-5 rounded-2xl text-left cursor-pointer flex flex-col justify-between min-h-[150px] transition-all duration-200 outline-none ${
-                        isSelected 
-                          ? "bg-[#1E2440] border-2 border-[#5B4FE8] shadow-[0_0_0_3px_rgba(91,79,232,0.3)]" 
-                          : "bg-[#1A1F35] border border-[#2A2F4A] hover:bg-[#1E2440] hover:border-[#5B4FE8] hover:shadow-[0_0_0_2px_rgba(91,79,232,0.2)]"
-                      }`}
-                    >
-                      <div>
-                        <div className="text-xs font-bold text-white uppercase tracking-wider">{tier.name}</div>
-                        <div className="text-xl font-black text-white mt-1">{tier.price}</div>
-                        <p className="text-[10px] text-muted-foreground mt-2 leading-relaxed">{tier.desc}</p>
-                      </div>
-                      {isSelected && (
-                        <div className="absolute top-3 right-3 text-[#5B4FE8]">
-                          <Check className="size-4" strokeWidth={3} />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* API Keys Configuration */}
-            <div className="p-4 rounded-xl border border-glass-border bg-[#1A1F35]/40 space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Key className="size-4 text-accent" />
-                <span>2. Connect Your AI API Keys</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                We do not supply default AI models. Input your own API keys to enable automation. Keys are encrypted and processed locally.
-              </p>
-
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="anthropicKey">Anthropic API Key (Claude)</Label>
-                    <Input 
-                      id="anthropicKey" 
-                      type="password"
-                      {...form.register("anthropicKey")} 
-                      placeholder="sk-ant-..." 
-                      className="glass border-glass-border font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="openaiKey">OpenAI API Key (ChatGPT)</Label>
-                    <Input 
-                      id="openaiKey" 
-                      type="password"
-                      {...form.register("openaiKey")} 
-                      placeholder="sk-..." 
-                      className="glass border-glass-border font-mono text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="groqKey">Groq API Key</Label>
-                    <Input 
-                      id="groqKey" 
-                      type="password"
-                      {...form.register("groqKey")} 
-                      placeholder="gsk_..." 
-                      className="glass border-glass-border font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="deepseekKey">DeepSeek API Key</Label>
-                    <Input 
-                      id="deepseekKey" 
-                      type="password"
-                      {...form.register("deepseekKey")} 
-                      placeholder="sk-..." 
-                      className="glass border-glass-border font-mono text-xs"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="geminiKey">Google Gemini API Key</Label>
-                    <Input 
-                      id="geminiKey" 
-                      type="password"
-                      {...form.register("geminiKey")} 
-                      placeholder="AIzaSy..." 
-                      className="glass border-glass-border font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Task specific Model Routing */}
-            <div className="p-4 rounded-xl border border-glass-border bg-[#1A1F35]/40 space-y-4">
-              <div className="flex items-center gap-2 text-sm font-semibold text-white">
-                <Bot className="size-4 text-accent" />
-                <span>3. Task-Specific AI Model Selection</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Map different AI models to individual tasks based on latency and cost requirements.
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
-                  <div>
-                    <div className="text-xs font-bold text-white">Product Copy & Descriptions</div>
-                    <div className="text-[10px] text-muted-foreground">Used for generating item names, titles, and SEO meta tags.</div>
-                  </div>
-                  <select 
-                    {...form.register("productModel")}
-                    className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
-                  >
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
-                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
-                    <option value="none">Manual Copywriting Only</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
-                  <div>
-                    <div className="text-xs font-bold text-white">Customer Email Auto-Responder</div>
-                    <div className="text-[10px] text-muted-foreground">Handles shipment notifications and buyer tracking support.</div>
-                  </div>
-                  <select 
-                    {...form.register("emailModel")}
-                    className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
-                  >
-                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
-                    <option value="none">Disabled</option>
-                  </select>
-                </div>
-
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
-                  <div>
-                    <div className="text-xs font-bold text-white">Inventory Sync & Mappings</div>
-                    <div className="text-[10px] text-muted-foreground">Correlates Printify product options to local variants.</div>
-                  </div>
-                  <select 
-                    {...form.register("inventoryModel")}
-                    className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
-                  >
-                    <option value="none">Disabled (Strict Sync)</option>
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
-                    <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-start space-x-3 bg-muted/10 p-4 rounded-xl border border-glass-border/50">
-              <Checkbox 
-                id="agreeUpgrade" 
-                checked={form.watch("agreeUpgrade")}
-                onCheckedChange={(checked) => form.setValue("agreeUpgrade", checked as boolean, { shouldValidate: true })}
-                className="mt-0.5 border-accent data-[state=checked]:bg-accent data-[state=checked]:text-white animate-none"
-              />
-              <Label htmlFor="agreeUpgrade" className="text-xs leading-relaxed text-muted-foreground cursor-pointer select-none">
-                I agree to upgrade my Aivv account to a business profile. I understand I will immediately gain access to supplier tools and AI integrations.
-              </Label>
-            </div>
-            {form.formState.errors.agreeUpgrade && (
-              <p className="text-xs text-red-500">{form.formState.errors.agreeUpgrade.message}</p>
-            )}
-
-            <Button 
-              type="submit" 
-              disabled={isLoading}
-              className="w-full h-14 rounded-2xl accent-gradient text-white font-bold shadow-xl shadow-accent/20"
-            >
-              {isLoading ? (
-                <Loader2 className="size-5 animate-spin mr-2" />
-              ) : "Proceed to Payment & Activate"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
     </div>
-  );
-}
-
-export default function AutomateUpgradePage() {
-  return (
-    <Suspense fallback={
-      <div className="flex h-[400px] items-center justify-center">
-        <Loader2 className="animate-spin size-8 text-accent" />
-      </div>
-    }>
-      <AutomateUpgradeForm />
-    </Suspense>
   );
 }
