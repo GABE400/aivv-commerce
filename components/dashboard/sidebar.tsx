@@ -11,7 +11,9 @@ import {
   Settings, 
   LogOut,
   Truck,
-  Box
+  Box,
+  ShoppingBag,
+  Sparkles
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -35,9 +37,11 @@ export function Sidebar({ user }: { user: any }) {
   ];
 
   const customerLinks = [
+    { name: "Shop Store", href: "/shop", icon: ShoppingBag },
     { name: "Overview", href: "/dashboard/customer", icon: LayoutDashboard },
     { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingCart },
     { name: "Library", href: "/dashboard/customer/library", icon: Box },
+    { name: "AI Automation", href: "/dashboard/customer/automate", icon: Sparkles },
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
   ];
 

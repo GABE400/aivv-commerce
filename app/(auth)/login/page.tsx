@@ -17,7 +17,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL: "/auth-callback",
     });
   };
 
@@ -27,7 +27,7 @@ export default function LoginPage() {
     try {
       await authClient.signIn.magicLink({
         email,
-        callbackURL: "/dashboard",
+        callbackURL: "/auth-callback",
       });
       setIsSuccess(true);
       toast.success("Magic link sent! Check your email.");
@@ -58,9 +58,9 @@ export default function LoginPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-        <p className="text-muted-foreground text-sm">
-          Securely sign in to your Aivv <span className="text-accent">OS</span> portal.
+        <h1 className="text-3xl font-bold mb-2">Welcome back to Aivv</h1>
+        <p className="text-muted-foreground text-sm leading-relaxed">
+          Sign in to shop, track orders, and manage your account.
         </p>
       </div>
 
@@ -119,9 +119,17 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <div className="text-center text-sm">
-        <span className="text-muted-foreground">Don't have an account? </span>
-        <Link href="/signup" className="text-accent font-bold hover:underline">Create Account</Link>
+      <div className="text-center space-y-2">
+        <div className="text-sm">
+          <span className="text-muted-foreground">Don't have an account? </span>
+          <Link href="/signup" className="text-accent font-bold hover:underline">Create Account</Link>
+        </div>
+        <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+          Create Account is for businesses. Shoppers can sign in directly above.
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Need help? Contact <a href="mailto:support@aivv.com" className="hover:underline">support@aivv.com</a>
+        </p>
       </div>
 
       <div className="pt-4 text-center">

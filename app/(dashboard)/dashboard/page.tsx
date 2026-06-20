@@ -21,5 +21,9 @@ export default async function DashboardEntryPage() {
     return redirect("/dashboard/supplier");
   }
 
-  return redirect("/dashboard/customer");
+  if (role === "customer" && !session.user.tosAccepted) {
+    return redirect("/onboarding/terms");
+  }
+
+  return redirect("/dashboard/user");
 }

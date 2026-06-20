@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import { orders } from "@/lib/db/schema";
+import { orders, users, supplierApplications } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { paymentProvider } from "@/lib/payments/dodo";
@@ -23,6 +23,36 @@ export async function POST(req: Request) {
     if (event.type === "checkout.succeeded") {
       const { checkout_id, metadata, customer, shipping_address } = event.data;
       const orderId = metadata?.orderId;
+
+      if (orderId && metadata?.type === "subscription_upgrade") {
+        await db.transaction(async (tx) => {
+          // 1. Upgrade user's role to supplier
+          await tx.update(users)
+            .set({ role: "supplier" })
+            .where(eq(users.id, metadata.userId));
+
+          // 2. Insert approved supplier application
+          await tx.insert(supplierApplications).values({
+            userId: metadata.userId,
+            storeName: metadata.storeName,
+            website: metadata.website || null,
+            description: `${metadata.description} (Paid Plan: ${metadata.plan?.toUpperCase()})`,
+            status: "approved",
+          });
+
+          // 3. Mark subscription order as paid/fulfilled
+          await tx.update(orders)
+            .set({ 
+              paymentStatus: "paid",
+              status: "fulfilled",
+              updatedAt: new Date()
+            })
+            .where(eq(orders.id, orderId));
+        });
+
+        console.log(`Subscription order ${orderId} successfully processed. User ${metadata.userId} upgraded to ${metadata.plan}.`);
+        return NextResponse.json({ received: true });
+      }
 
       if (orderId) {
         // 1. Update order status and store shipping address

@@ -19,6 +19,10 @@ export default async function CustomerDashboard() {
     return redirect("/login");
   }
 
+  if (!session.user.tosAccepted) {
+    return redirect("/onboarding/terms");
+  }
+
   const userId = session.user.id;
 
   // Fetch real data
@@ -96,25 +100,45 @@ export default async function CustomerDashboard() {
 
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-2xl glass border border-glass-border">
-          <div className="text-sm font-medium text-muted-foreground uppercase mb-2">My Total Orders</div>
-          <div className="text-4xl font-bold">{orderStats[0]?.value || 0}</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="p-6 rounded-2xl glass border border-glass-border flex flex-col justify-between min-h-[160px]">
+          <div>
+            <div className="text-sm font-medium text-muted-foreground uppercase mb-2">My Total Orders</div>
+            <div className="text-4xl font-bold">{orderStats[0]?.value || 0}</div>
+          </div>
           <div className="mt-4 text-xs text-accent font-bold">Thank you for your business!</div>
         </div>
-        <div className="p-6 rounded-2xl glass border border-glass-border">
-          <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Active Assets</div>
-          <div className="flex items-center justify-between">
-            <div className="text-4xl font-bold">{activeAssetsCount}</div>
-            {activeAssetsCount > 0 && (
-              <Link href="/dashboard/customer/library">
-                <Button variant="ghost" className="text-xs font-bold text-accent hover:underline px-0">
-                  View Library &rarr;
-                </Button>
-              </Link>
-            )}
+        <div className="p-6 rounded-2xl glass border border-glass-border flex flex-col justify-between min-h-[160px]">
+          <div>
+            <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Active Assets</div>
+            <div className="flex items-center justify-between">
+              <div className="text-4xl font-bold">{activeAssetsCount}</div>
+              {activeAssetsCount > 0 && (
+                <Link href="/dashboard/customer/library">
+                  <Button variant="ghost" className="text-xs font-bold text-accent hover:underline px-0">
+                    View Library &rarr;
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           <div className="mt-4 text-xs text-accent font-bold">Digital products available here</div>
+        </div>
+        <div className="p-6 rounded-2xl glass border border-glass-border flex flex-col justify-between min-h-[160px]">
+          <div>
+            <div className="text-sm font-medium text-muted-foreground uppercase mb-2">AI Automation</div>
+            <div className="text-lg font-bold leading-tight">Turn into a Business</div>
+            <p className="text-[11px] text-muted-foreground leading-normal mt-1">
+              Access advanced workflows, list custom products, and run operations on autopilot.
+            </p>
+          </div>
+          <div className="mt-4">
+            <Link href="/dashboard/customer/automate">
+              <Button className="w-full h-9 text-xs font-bold accent-gradient text-white rounded-xl shadow-md shadow-accent/15">
+                Upgrade & Automate
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
 

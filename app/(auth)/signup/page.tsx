@@ -6,12 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Mail } from "lucide-react";
+import { Mail, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner"; // Assuming sonner is available or can be added
 
 export default function SignupPage() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [businessName, setBusinessName] = useState("");
+  const [useCase, setUseCase] = useState("");
   const [tosAccepted, setTosAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -21,9 +24,17 @@ export default function SignupPage() {
       toast.error("Please accept the Terms and Conditions to continue.");
       return;
     }
+    const params = new URLSearchParams();
+    if (name.trim()) params.set("name", name.trim());
+    if (businessName.trim()) params.set("businessName", businessName.trim());
+    if (useCase) params.set("useCase", useCase);
+    
+    const queryString = params.toString();
+    const callbackURL = queryString ? `/onboarding?${queryString}` : "/onboarding";
+
     await authClient.signIn.social({
       provider: "google",
-      callbackURL: "/dashboard",
+      callbackURL,
     });
   };
 
@@ -33,12 +44,29 @@ export default function SignupPage() {
       toast.error("Please accept the Terms and Conditions to continue.");
       return;
     }
+    if (!name.trim()) {
+      toast.error("Please enter your full name.");
+      return;
+    }
+    if (!useCase) {
+      toast.error("Please select how you will use Aivv.");
+      return;
+    }
     
     setIsLoading(true);
     try {
+      const params = new URLSearchParams();
+      params.set("name", name.trim());
+      if (businessName.trim()) {
+        params.set("businessName", businessName.trim());
+      }
+      params.set("useCase", useCase);
+      const callbackURL = `/onboarding?${params.toString()}`;
+
       await authClient.signIn.magicLink({
         email,
-        callbackURL: "/dashboard",
+        name: name.trim(),
+        callbackURL,
       });
       setIsSuccess(true);
       toast.success("Magic link sent! Check your email.");
@@ -69,9 +97,9 @@ export default function SignupPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-3xl font-bold mb-2">Join Aivv <span className="text-accent">OS</span></h1>
+        <h1 className="text-3xl font-bold mb-2">Create your Aivv account</h1>
         <p className="text-muted-foreground text-sm">
-          Start your global no-inventory commerce journey.
+          Automate your business or shop our store — one account for everything.
         </p>
       </div>
 
@@ -103,6 +131,19 @@ export default function SignupPage() {
 
       <form onSubmit={handleMagicLinkSignup} className="space-y-6">
         <div className="space-y-2">
+          <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Full Name</Label>
+          <Input 
+            id="name"
+            type="text"
+            placeholder="John Doe"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="h-12 rounded-xl glass border border-glass-border focus:border-accent bg-transparent transition-all"
+            required
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email Address</Label>
           <Input 
             id="email"
@@ -115,6 +156,55 @@ export default function SignupPage() {
           />
         </div>
 
+        <div className="space-y-2">
+          <Label htmlFor="businessName" className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Business Name</Label>
+          <Input 
+            id="businessName"
+            type="text"
+            placeholder="Your company or store name"
+            value={businessName}
+            onChange={(e) => setBusinessName(e.target.value)}
+            className="h-12 rounded-xl glass border border-glass-border focus:border-accent bg-transparent transition-all"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">How will you use Aivv?</Label>
+          <div className="flex flex-col gap-2.5">
+            {[
+              { id: "automate", label: "Automate my business with AI" },
+              { id: "shop", label: "Shop / buy products" },
+              { id: "both", label: "Both" }
+            ].map((option) => {
+              const isSelected = useCase === option.id;
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setUseCase(option.id)}
+                  className={`relative w-full p-4 rounded-xl text-left text-sm cursor-pointer flex items-center justify-between select-none outline-none transition-all ${
+                    isSelected 
+                      ? "bg-[#1E2440] border-2 border-[#5B4FE8] shadow-[0_0_0_3px_rgba(91,79,232,0.3)]" 
+                      : "bg-[#1A1F35] border border-[#2A2F4A] hover:bg-[#1E2440] hover:border-[#5B4FE8] hover:shadow-[0_0_0_2px_rgba(91,79,232,0.2)]"
+                  }`}
+                  style={{
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  <span className="font-semibold text-white pr-8 leading-tight">{option.label}</span>
+                  {isSelected && (
+                    <div className="absolute top-2 right-2 text-[#5B4FE8]">
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="flex items-start space-x-3 bg-muted/20 p-4 rounded-xl border border-glass-border">
           <Checkbox 
             id="tos" 
@@ -123,7 +213,7 @@ export default function SignupPage() {
             className="mt-1 border-accent data-[state=checked]:bg-accent data-[state=checked]:text-white"
           />
           <Label htmlFor="tos" className="text-xs leading-relaxed text-muted-foreground cursor-pointer select-none">
-            I agree to the <Link href="/terms" className="text-accent font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-accent font-bold hover:underline">Privacy Policy</Link>. I understand my data will be stored securely.
+            I have read and agree to the <Link href="/terms" className="text-accent font-bold hover:underline">Terms of Service</Link> and <Link href="/privacy" className="text-accent font-bold hover:underline">Privacy Policy</Link>
           </Label>
         </div>
 
@@ -136,7 +226,7 @@ export default function SignupPage() {
             <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
           ) : (
             <>
-              Get Magic Link
+              Create Account
               <Mail className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </>
           )}
