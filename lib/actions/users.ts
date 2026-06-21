@@ -300,3 +300,29 @@ export async function deleteUserAction(targetUserId: string) {
     return { success: false, error: error.message || "Failed to delete user" };
   }
 }
+
+export async function updateProfileSettingsAction(data: { name: string }) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  if (!data.name || data.name.trim() === "") {
+    return { success: false, error: "Name is required" };
+  }
+
+  try {
+    await db.update(users)
+      .set({ name: data.name })
+      .where(eq(users.id, session.user.id));
+    
+    revalidatePath("/dashboard/customer/settings");
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, error: error.message || "Failed to update profile settings" };
+  }
+}
