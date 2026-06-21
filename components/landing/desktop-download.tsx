@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { Container } from "@/components/ui/container";
 import Link from "next/link";
+import Image from "next/image";
 
 export function DesktopDownload() {
   return (
@@ -151,7 +152,14 @@ export function DesktopDownload() {
                 <div className="border-r border-[#2A2F4A] bg-[#121625] pt-10 px-4 flex flex-col justify-between h-full">
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2 px-1">
-                      <div className="size-5 rounded bg-indigo-500 flex items-center justify-center text-[9px] font-bold text-white font-syne">A</div>
+                      <Image
+                        src="/logoaivv.svg"
+                        alt="Aivv Logo"
+                        width={20}
+                        height={20}
+                        style={{ height: "auto" }}
+                        className="rounded"
+                      />
                       <span className="font-bold text-xs text-white tracking-wide font-syne">AIVV OS</span>
                     </div>
                     <div className="space-y-1">

@@ -5,7 +5,7 @@
   "identifier": "com.aivv.commerce",
   "build": {
     "frontendDist": "../out",
-    "devUrl": "http://localhost:3000",
+    "devUrl": "http://localhost:3000/login?platform=desktop",
     "beforeDevCommand": "pnpm dev",
     "beforeBuildCommand": "pnpm build"
   },
@@ -17,7 +17,7 @@
         "height": 600,
         "resizable": true,
         "fullscreen": false,
-        "url": "http://localhost:3000"
+        "url": "http://localhost:3000/login?platform=desktop"
       }
     ],
     "security": {

@@ -1,17 +1,32 @@
+"use client";
+
 import { Container } from "@/components/ui/container";
 import Link from "next/link";
+import Image from "next/image";
+import { useIsTauri } from "@/lib/tauri";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const isTauri = useIsTauri();
+  const logoHref = isTauri ? "/login?platform=desktop" : "/";
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Auth Header */}
       <header className="h-20 flex items-center px-8">
-        <Link href="/" className="flex items-center space-x-2">
-           <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center text-white font-bold">A</div>
+        <Link href={logoHref} className="flex items-center space-x-2">
+           <Image
+             src="/logoaivv.svg"
+             alt="Aivv Logo"
+             width={32}
+             height={32}
+             style={{ height: "auto" }}
+             className="rounded-lg"
+             priority
+           />
            <span className="text-lg font-bold">Aivv <span className="text-accent">OS</span></span>
         </Link>
       </header>
@@ -43,3 +58,4 @@ export default function AuthLayout({
     </div>
   );
 }
+

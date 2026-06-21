@@ -8,8 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Mail, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
+import { useIsTauri } from "@/lib/tauri";
 
 export default function LoginPage() {
+  const isTauri = useIsTauri();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -60,7 +62,9 @@ export default function LoginPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Welcome back to Aivv</h1>
         <p className="text-muted-foreground text-sm leading-relaxed">
-          Sign in to shop, track orders, and manage your account.
+          {isTauri
+            ? "Sign in to manage your AI workflows, monitor automations, and run your business operations."
+            : "Sign in to shop, track orders, and manage your account."}
         </p>
       </div>
 
@@ -122,22 +126,26 @@ export default function LoginPage() {
       <div className="text-center space-y-2">
         <div className="text-sm">
           <span className="text-muted-foreground">Don't have an account? </span>
-          <Link href="/signup" className="text-accent font-bold hover:underline">Create Account</Link>
+          <Link href={isTauri ? "/signup?platform=desktop" : "/signup"} className="text-accent font-bold hover:underline">Create Account</Link>
         </div>
-        <p className="text-xs text-muted-foreground font-sans leading-relaxed">
-          Create Account is for businesses. Shoppers can sign in directly above.
-        </p>
+        {!isTauri && (
+          <p className="text-xs text-muted-foreground font-sans leading-relaxed">
+            Create Account is for businesses. Shoppers can sign in directly above.
+          </p>
+        )}
         <p className="text-xs text-muted-foreground">
           Need help? Contact <a href="mailto:support@aivv.com" className="hover:underline">support@aivv.com</a>
         </p>
       </div>
 
-      <div className="pt-4 text-center">
-         <Link href="/" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group">
-            <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" />
-            Back to storefront
-         </Link>
-      </div>
+      {!isTauri && (
+        <div className="pt-4 text-center">
+           <Link href="/" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group">
+              <ArrowLeft className="h-3 w-3 group-hover:-translate-x-1 transition-transform" />
+              Back to storefront
+           </Link>
+        </div>
+      )}
     </div>
   );
 }

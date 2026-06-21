@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
+import { useIsTauri } from "@/lib/tauri";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -11,6 +12,7 @@ import Link from "next/link";
 import { toast } from "sonner"; // Assuming sonner is available or can be added
 
 export default function SignupPage() {
+  const isTauri = useIsTauri();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [businessName, setBusinessName] = useState("");
@@ -18,6 +20,12 @@ export default function SignupPage() {
   const [tosAccepted, setTosAccepted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (isTauri) {
+      setUseCase("automate");
+    }
+  }, [isTauri]);
 
   const handleGoogleSignup = async () => {
     if (!tosAccepted) {
@@ -99,7 +107,9 @@ export default function SignupPage() {
       <div className="text-center">
         <h1 className="text-3xl font-bold mb-2">Create your Aivv account</h1>
         <p className="text-muted-foreground text-sm">
-          Automate your business or shop our store — one account for everything.
+          {isTauri
+            ? "Register your business to start building AI workflows."
+            : "Automate your business or shop our store — one account for everything."}
         </p>
       </div>
 
@@ -168,42 +178,44 @@ export default function SignupPage() {
           />
         </div>
 
-        <div className="space-y-2">
-          <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">How will you use Aivv?</Label>
-          <div className="flex flex-col gap-2.5">
-            {[
-              { id: "automate", label: "Automate my business with AI" },
-              { id: "shop", label: "Shop / buy products" },
-              { id: "both", label: "Both" }
-            ].map((option) => {
-              const isSelected = useCase === option.id;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => setUseCase(option.id)}
-                  className={`relative w-full p-4 rounded-xl text-left text-sm cursor-pointer flex items-center justify-between select-none outline-none transition-all ${
-                    isSelected 
-                      ? "bg-[#1E2440] border-2 border-[#5B4FE8] shadow-[0_0_0_3px_rgba(91,79,232,0.3)]" 
-                      : "bg-[#1A1F35] border border-[#2A2F4A] hover:bg-[#1E2440] hover:border-[#5B4FE8] hover:shadow-[0_0_0_2px_rgba(91,79,232,0.2)]"
-                  }`}
-                  style={{
-                    transition: "all 0.15s ease"
-                  }}
-                >
-                  <span className="font-semibold text-white pr-8 leading-tight">{option.label}</span>
-                  {isSelected && (
-                    <div className="absolute top-2 right-2 text-[#5B4FE8]">
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                  )}
-                </button>
-              );
-            })}
+        {!isTauri && (
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">How will you use Aivv?</Label>
+            <div className="flex flex-col gap-2.5">
+              {[
+                { id: "automate", label: "Automate my business with AI" },
+                { id: "shop", label: "Shop / buy products" },
+                { id: "both", label: "Both" }
+              ].map((option) => {
+                const isSelected = useCase === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setUseCase(option.id)}
+                    className={`relative w-full p-4 rounded-xl text-left text-sm cursor-pointer flex items-center justify-between select-none outline-none transition-all ${
+                      isSelected 
+                        ? "bg-[#1E2440] border-2 border-[#5B4FE8] shadow-[0_0_0_3px_rgba(91,79,232,0.3)]" 
+                        : "bg-[#1A1F35] border border-[#2A2F4A] hover:bg-[#1E2440] hover:border-[#5B4FE8] hover:shadow-[0_0_0_2px_rgba(91,79,232,0.2)]"
+                    }`}
+                    style={{
+                      transition: "all 0.15s ease"
+                    }}
+                  >
+                    <span className="font-semibold text-white pr-8 leading-tight">{option.label}</span>
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 text-[#5B4FE8]">
+                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex items-start space-x-3 bg-muted/20 p-4 rounded-xl border border-glass-border">
           <Checkbox 
@@ -235,7 +247,7 @@ export default function SignupPage() {
 
       <div className="text-center text-sm">
         <span className="text-muted-foreground">Already have an account? </span>
-        <Link href="/login" className="text-accent font-bold hover:underline">Sign In</Link>
+        <Link href={isTauri ? "/login?platform=desktop" : "/login"} className="text-accent font-bold hover:underline">Sign In</Link>
       </div>
     </div>
   );
