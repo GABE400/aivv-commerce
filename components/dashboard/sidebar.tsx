@@ -15,7 +15,8 @@ import {
   Box,
   ShoppingBag,
   Sparkles,
-  Layers
+  Layers,
+  CreditCard
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
@@ -47,6 +48,7 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingCart },
     { name: "Library", href: "/dashboard/customer/library", icon: Box },
     { name: "AI Automation", href: "/dashboard/customer/automate", icon: Sparkles },
+    { name: "Billing", href: "/dashboard/user/billing", icon: CreditCard },
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
   ];
 

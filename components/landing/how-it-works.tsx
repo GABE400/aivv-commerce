@@ -7,8 +7,8 @@ import { Key, Zap, Users, Activity, ShoppingBag, CreditCard, Truck, Mail } from 
 
 const businessSteps = [
   {
-    title: "Add your API key",
-    description: "Connect Claude or OpenAI from your dashboard",
+    title: "Start free or bring your key",
+    description: "New users get 10 free runs powered by Groq instantly. Connect your own Claude, OpenAI, or Gemini key anytime to unlock full power.",
     icon: Key,
   },
   {

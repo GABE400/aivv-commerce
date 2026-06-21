@@ -5,11 +5,12 @@ import { Container } from "@/components/ui/container";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Key, Zap, Users } from "lucide-react";
+import Link from "next/link";
 
 const automationFeatures = [
   {
     title: "Bring Your Own API Key",
-    description: "Connect Claude, OpenAI, or Gemini. You control the AI, we build the workflows.",
+    description: "Start free with Groq's lightning-fast Llama 3.3 model — built in, no setup. Connect Claude, OpenAI, or Gemini when you're ready to scale.",
     icon: Key,
   },
   {
@@ -47,8 +48,7 @@ export function Automation() {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground leading-relaxed"
           >
-            Connect your Claude or OpenAI API key and automate any part of your operation — 
-            from customer follow-ups to internal reports. Works for any business, any industry.
+            Start automating instantly with our built-in Groq AI — no API key needed. Or connect your own Claude, OpenAI, or Gemini key for full control. Works for any business, any industry.
           </motion.p>
         </div>
 
@@ -76,13 +76,43 @@ export function Automation() {
           ))}
         </div>
 
+        {/* New Promo Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="mt-8"
+        >
+          <Card 
+            style={{ backgroundColor: "#1A1F35" }}
+            className="relative overflow-hidden border-l-4 border-l-indigo-500 border-y border-r border-glass-border hover:border-indigo-500/40 hover:shadow-xl hover:shadow-indigo-500/5 group transition-all duration-300"
+          >
+            <CardContent className="p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="flex-1">
+                <p className="text-white font-semibold leading-relaxed text-sm md:text-base">
+                  ✦ New users get 10 free workflow runs powered by Groq — no API key or credit card required.
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center justify-start md:justify-end">
+                <Link href="/signup">
+                  <Button className="h-11 px-6 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl transition-transform active:scale-95 cursor-pointer">
+                    Try Free Now
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
         {/* Local Setup Consultation Banner */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.3 }}
-          className="mt-12"
+          className="mt-8"
         >
           <Card className="relative overflow-hidden border-l-4 border-l-accent border-y border-r border-glass-border bg-glass-card bg-gradient-to-r from-accent/[0.03] to-transparent hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 group transition-all duration-300">
             {/* Background glow */}
@@ -97,7 +127,7 @@ export function Automation() {
                   Not sure where to start?
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                  We offer on-site setup for businesses in Lusaka and surrounding areas.
+                  Already on a free plan? Book a setup session to upgrade to Agency and get on-site support.
                 </p>
               </div>
 

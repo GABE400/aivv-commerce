@@ -13,6 +13,22 @@ import Link from "next/link";
 
 const automationTiers = [
   {
+    id: "free",
+    name: "Free",
+    price: "$0",
+    description: "Try Aivv with our built-in AI — no API key needed.",
+    features: [
+      "10 Workflow Runs/month",
+      "1 Pre-built Workflow",
+      "Powered by Groq (Llama 3.3)",
+      "Manual Triggers Only",
+      "Community Support",
+    ],
+    cta: "Start for Free",
+    highlighted: false,
+    isFree: true,
+  },
+  {
     id: "starter",
     name: "Starter",
     price: "$29",
@@ -81,7 +97,7 @@ export function Pricing() {
         <div className="text-center max-w-2xl mx-auto mb-20 text-foreground">
           <h2 className="text-3xl md:text-5xl font-bold mb-6">Simple, scale-ready <span className="text-gradient">pricing.</span></h2>
           <p className="text-lg text-muted-foreground">
-            No hidden transaction fees. Choose the tier that matches your business model.
+            Start free with Groq. Upgrade when your business needs more.
           </p>
         </div>
 
@@ -94,7 +110,7 @@ export function Pricing() {
             <h3 className="text-2xl md:text-3xl font-extrabold text-foreground">Automate your business</h3>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {automationTiers.map((tier, index) => (
               <motion.div
                 key={tier.name}
@@ -102,9 +118,10 @@ export function Pricing() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: index * 0.1 }}
+                className="flex"
               >
                 <Card className={cn(
-                  "h-full relative overflow-hidden group transition-all duration-500",
+                  "w-full h-full relative overflow-hidden group transition-all duration-500",
                   tier.highlighted ? "border-accent ring-1 ring-accent/50 shadow-[0_0_40px_rgba(124,58,237,0.15)] bg-accent/5 dark:bg-accent/[0.02]" : "hover:border-accent/30"
                 )}>
                   {tier.highlighted && (
@@ -113,7 +130,7 @@ export function Pricing() {
                     </div>
                   )}
                   
-                  <CardContent className="p-8 flex flex-col h-full">
+                  <CardContent className="p-8 flex flex-col h-full justify-between">
                     <div className="mb-8">
                       <h4 className="text-lg font-bold mb-2 text-foreground">{tier.name}</h4>
                       <div className="flex items-baseline space-x-1 text-foreground">
@@ -134,15 +151,35 @@ export function Pricing() {
                       ))}
                     </ul>
 
-                    <Link 
-                      href={`/dashboard/customer/automate?plan=${tier.id}`}
-                      className={cn(
-                        buttonVariants({ variant: tier.highlighted ? "primary" : "outline" }),
-                        "w-full font-bold inline-flex items-center justify-center"
+                    <div className="mt-auto">
+                      <Link 
+                        href={tier.isFree ? "/signup" : `/dashboard/customer/automate?plan=${tier.id}`}
+                        className={cn(
+                          buttonVariants({ variant: tier.highlighted ? "primary" : "outline" }),
+                          "w-full font-bold inline-flex items-center justify-center"
+                        )}
+                      >
+                        {tier.cta}
+                      </Link>
+
+                      {tier.isFree && (
+                        <p className="mt-2 text-center text-[10px] text-muted-foreground font-medium">
+                          No credit card required.
+                        </p>
                       )}
-                    >
-                      {tier.cta}
-                    </Link>
+
+                      {tier.isFree && (
+                        <div className="mt-6 pt-4 border-t border-glass-border/50 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground font-semibold">
+                          <span>Powered by</span>
+                          <div className="flex items-center gap-1 text-foreground">
+                            <svg className="size-3 fill-orange-500 shrink-0" viewBox="0 0 24 24">
+                              <path d="M12 2L2 14h9l-1 8 10-12h-9l1-8z" />
+                            </svg>
+                            <span>Groq</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               </motion.div>

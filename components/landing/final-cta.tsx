@@ -34,12 +34,12 @@ export function FinalCTA() {
             <span className="text-gradient">and shop without inventory.</span>
           </h2>
           <p className="text-xl text-muted-foreground mb-12 max-w-3xl mx-auto leading-relaxed">
-            Connect custom AI workflows using your own API keys, checkout catalog items securely, and run your business on autopilot — powered by Printify and Dodo Payments.
+            Start free with 10 Groq-powered workflow runs. Bring your own API key to unlock full power. No credit card required to get started.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
             <a href="#automation" className="w-full sm:w-auto">
               <Button size="lg" className="h-16 px-12 text-lg font-bold w-full">
-                Automate My Business
+                Start Free Today
               </Button>
             </a>
             <a href="#shop" className="w-full sm:w-auto">

@@ -39,7 +39,10 @@ export function Footer() {
                 className="rounded-lg"
               />
               <span className="text-xl font-bold tracking-tight text-foreground">
-                Automated Intelligent <span className="text-accent">Virtual Ventures</span>
+                <span className="inline md:hidden font-syne">AIVV</span>
+                <span className="hidden md:inline">
+                  Automated Intelligent <span className="text-accent">Virtual Ventures</span>
+                </span>
               </span>
             </Link>
             <p className="text-muted-foreground text-sm max-w-xs leading-relaxed">

@@ -289,3 +289,54 @@ export const workflowExecutionRelations = relations(workflowExecutions, ({ one }
     references: [users.id],
   }),
 }));
+
+// New Scheduled Workflows Tables
+export const workflows = pgTable("workflows", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId").notNull().references(() => users.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  type: text("type").notNull(),
+  schedule: text("schedule").notNull(),
+  prompt: text("prompt").notNull(),
+  provider: text("provider").notNull(),
+  apiKey: text("apiKey"),
+  status: text("status").notNull().default("active"),
+  outputType: text("outputType").notNull().default("email"),
+  emailRecipient: text("emailRecipient"),
+  lastRunAt: timestamp("lastRunAt"),
+  nextRunAt: timestamp("nextRunAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const workflowRuns = pgTable("workflow_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workflowId: uuid("workflowId").references(() => workflows.id),
+  userId: text("userId").references(() => users.id),
+  status: text("status").notNull(),
+  output: text("output"),
+  error: text("error"),
+  tokensUsed: integer("tokensUsed"),
+  durationMs: integer("durationMs"),
+  ranAt: timestamp("ranAt").defaultNow().notNull(),
+});
+
+export const workflowSchedulerRelations = relations(workflows, ({ one, many }) => ({
+  user: one(users, {
+    fields: [workflows.userId],
+    references: [users.id],
+  }),
+  runs: many(workflowRuns),
+}));
+
+export const workflowRunSchedulerRelations = relations(workflowRuns, ({ one }) => ({
+  workflow: one(workflows, {
+    fields: [workflowRuns.workflowId],
+    references: [workflows.id],
+  }),
+  user: one(users, {
+    fields: [workflowRuns.userId],
+    references: [users.id],
+  }),
+}));

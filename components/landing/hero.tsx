@@ -134,7 +134,7 @@ export function Hero() {
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
                 <a href="#automation" className="w-full sm:w-auto">
                   <Button size="lg" className="w-full font-bold">
-                    Automate My Business
+                    Start Free — No Card Needed
                   </Button>
                 </a>
                 <a href="#shop" className="w-full sm:w-auto">
@@ -144,8 +144,13 @@ export function Hero() {
                 </a>
               </div>
 
+              <p className="mt-3 text-xs text-muted-foreground font-sans font-normal text-center lg:text-left">
+                Free plan includes 10 workflow runs/month powered by Groq. Upgrade anytime.
+              </p>
+
               <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs text-muted-foreground font-medium">
-                <span>✦ For businesses & operators</span>
+                <span>✦ Free tier powered by Groq</span>
+                <span>✦ BYOK: Claude · OpenAI · Gemini</span>
                 <span>✦ Powered by Printify + Dodo Payments</span>
               </div>
             </motion.div>

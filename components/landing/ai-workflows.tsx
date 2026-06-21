@@ -110,7 +110,7 @@ export function AIWorkflows() {
           <div className="space-y-2">
             <h4 className="text-lg font-bold text-foreground">Ready to automate your store?</h4>
             <p className="text-xs md:text-sm text-muted-foreground">
-              Sign up today and get access to the AI Automation layer.
+              Sign up free today. No credit card required — 10 workflow runs included on us, powered by Groq.
             </p>
           </div>
 
@@ -118,7 +118,7 @@ export function AIWorkflows() {
             href="/dashboard/customer/automate" 
             className="inline-flex items-center justify-center gap-2 h-12 px-8 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl transition-transform active:scale-95 cursor-pointer text-sm"
           >
-            Start Automating
+            Start Free
             <ArrowRight className="size-4" />
           </Link>
         </motion.div>

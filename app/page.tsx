@@ -4,6 +4,7 @@ import { SocialProof } from "@/components/landing/social-proof";
 import { Features } from "@/components/landing/features";
 import { HowItWorks } from "@/components/landing/how-it-works";
 import { DashboardPreview } from "@/components/landing/dashboard-preview";
+import { DesktopDownload } from "@/components/landing/desktop-download";
 import { DeveloperSection } from "@/components/landing/developer-section";
 import { Pricing } from "@/components/landing/pricing";
 import { FAQ } from "@/components/landing/faq";
@@ -25,6 +26,7 @@ export default function Home() {
         <Features />
         <HowItWorks />
         <DashboardPreview />
+        <DesktopDownload />
         <AIWorkflows />
         <Pricing />
         <FAQ />

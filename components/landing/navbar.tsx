@@ -69,7 +69,10 @@ export function Navbar() {
                 priority
               />
               <span className="text-xl font-bold tracking-tight">
-                Automated Intelligent <span className="text-accent text-purple-600 dark:text-purple-400">Virtual Ventures</span>
+                <span className="inline md:hidden font-syne">AIVV</span>
+                <span className="hidden md:inline">
+                  Automated Intelligent <span className="text-accent text-purple-600 dark:text-purple-400">Virtual Ventures</span>
+                </span>
               </span>
             </Link>
 
@@ -116,7 +119,7 @@ export function Navbar() {
               )}
               
               <Link href={session ? "/dashboard/customer/automate" : "/signup"}>
-                <Button size="sm" className="rounded-xl">Workflow</Button>
+                <Button size="sm" className="rounded-xl">Start Free</Button>
               </Link>
             </nav>
 
@@ -179,7 +182,7 @@ export function Navbar() {
               </Button>
             )}
             <Link href={session ? "/dashboard/customer/automate" : "/signup"} onClick={() => setIsOpen(false)}>
-              <Button className="w-full">Workflow</Button>
+              <Button className="w-full">Start Free</Button>
             </Link>
           </div>
         </motion.div>
