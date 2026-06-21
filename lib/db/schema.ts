@@ -9,7 +9,7 @@ export const paymentStatusEnum = pgEnum("payment_status", ["unpaid", "paid", "re
 export const fulfillmentStatusEnum = pgEnum("fulfillment_status", ["none", "pending", "in_progress", "shipped", "delivered"]);
 export const applicationStatusEnum = pgEnum("application_status", ["pending", "approved", "rejected"]);
 export const subscriptionStatusEnum = pgEnum("subscription_status", ["active", "past_due", "cancelled", "expired", "trialing"]);
-export const subscriptionPlanEnum = pgEnum("subscription_plan", ["starter", "growth", "agency"]);
+export const subscriptionPlanEnum = pgEnum("subscription_plan", ["free", "starter", "growth", "agency"]);
 export const workflowStatusEnum = pgEnum("workflow_status", ["active", "paused", "error"]);
 export const executionStatusEnum = pgEnum("execution_status", ["pending", "running", "completed", "failed"]);
 

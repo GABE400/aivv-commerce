@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [magicLinkUrl, setMagicLinkUrl] = useState("");
 
   const handleGoogleLogin = async () => {
     await authClient.signIn.social({
@@ -47,10 +48,47 @@ export default function LoginPage() {
           <Mail className="h-8 w-8 text-accent" />
         </div>
         <h1 className="text-2xl font-bold mb-2">Check your inbox</h1>
-        <p className="text-muted-foreground mb-8 text-sm">
+        <p className="text-muted-foreground mb-6 text-sm">
           We sent a magic link to <span className="text-foreground font-bold">{email}</span>. Click it to sign in instantly.
         </p>
-        <button onClick={() => setIsSuccess(false)} className="text-accent font-bold text-sm hover:underline">
+
+        {isTauri && (
+          <form 
+            onSubmit={(e) => {
+              e.preventDefault();
+              const urlVal = magicLinkUrl.trim();
+              if (!urlVal.startsWith("http://") && !urlVal.startsWith("https://")) {
+                toast.error("Please paste a valid magic link URL from your email.");
+                return;
+              }
+              window.location.href = urlVal;
+            }}
+            className="max-w-xs mx-auto mb-8 p-4 rounded-xl border border-glass-border bg-glass/20 text-left space-y-3"
+          >
+            <Label htmlFor="magicLinkUrl" className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
+              Or Paste Magic Link Here
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="magicLinkUrl"
+                type="url"
+                placeholder="https://aivv.app/api/auth/magic-link/callback?..."
+                value={magicLinkUrl}
+                onChange={(e) => setMagicLinkUrl(e.target.value)}
+                className="h-10 text-xs glass border-glass-border focus:border-accent bg-transparent flex-1"
+                required
+              />
+              <Button type="submit" size="sm" className="h-10 px-3 bg-accent text-white hover:bg-accent/80 font-semibold text-xs cursor-pointer">
+                Submit
+              </Button>
+            </div>
+            <p className="text-[10px] text-gray-500 leading-normal">
+              Copy the button link from your email and paste it here to sign in on desktop.
+            </p>
+          </form>
+        )}
+
+        <button onClick={() => setIsSuccess(false)} className="text-accent font-bold text-sm hover:underline block mx-auto">
           Change email address
         </button>
       </div>

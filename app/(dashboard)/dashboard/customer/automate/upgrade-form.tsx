@@ -29,7 +29,7 @@ const upgradeSchema = z.object({
   productModel: z.string(),
   emailModel: z.string(),
   inventoryModel: z.string(),
-  plan: z.enum(["starter", "growth", "agency"]),
+  plan: z.enum(["free", "starter", "growth", "agency"]),
   agreeUpgrade: z.boolean().refine((val) => val === true, {
     message: "You must agree to upgrade your account",
   }),
@@ -61,7 +61,7 @@ function AutomateUpgradeForm() {
       productModel: "claude-3-5-sonnet",
       emailModel: "gpt-4o",
       inventoryModel: "none",
-      plan: "growth",
+      plan: "free",
       agreeUpgrade: false,
     },
   });
@@ -225,8 +225,9 @@ function AutomateUpgradeForm() {
                 <DollarSign className="size-4 text-accent" />
                 <span>1. Select Subscription Tier</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {[
+                  { id: "free", name: "Free Plan", price: "$0/mo", desc: "1 workflow, 1 API Key, community guides." },
                   { id: "starter", name: "Starter Plan", price: isAdmin ? "$0 (Free for Admin)" : "$29/mo", desc: "5 workflows, 1 API Key, remote guides." },
                   { id: "growth", name: "Growth Plan", price: isAdmin ? "$0 (Free for Admin)" : "$79/mo", desc: "20 workflows, unlimited API Keys, Webhooks." },
                   { id: "agency", name: "Agency Plan", price: isAdmin ? "$0 (Free for Admin)" : "$199/mo", desc: "Unlimited workflows, team logs, custom setups." }
@@ -434,12 +435,14 @@ function AutomateUpgradeForm() {
             <Button 
               type="submit" 
               disabled={isLoading}
-              className="w-full h-14 rounded-2xl accent-gradient text-white font-bold shadow-xl shadow-accent/20"
+              className="w-full h-14 rounded-2xl accent-gradient text-white font-bold shadow-xl shadow-accent/20 cursor-pointer"
             >
               {isLoading ? (
                 <Loader2 className="size-5 animate-spin mr-2" />
               ) : isAdmin ? (
                 "Activate Free Admin Automation"
+              ) : plan === "free" ? (
+                "Activate Free Business Account"
               ) : (
                 "Proceed to Payment & Activate"
               )}

@@ -106,8 +106,8 @@ export function DesktopDownload() {
                   Download for macOS
                 </button>
                 <a
-                  href="/download/aivv-commerce_0.1.1_x64_en-US.msi"
-                  download="aivv-commerce_0.1.1_x64_en-US.msi"
+                  href="/download/aivv-commerce_0.1.2_x64_en-US.msi"
+                  download="aivv-commerce_0.1.2_x64_en-US.msi"
                   className="flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold bg-[#0A0E1A] text-white hover:bg-[#060912] border border-indigo-500/30 hover:border-indigo-500/60 transition-colors cursor-pointer"
                 >
                   <svg className="size-4 mr-2 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

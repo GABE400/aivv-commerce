@@ -46,7 +46,7 @@ export async function createUpgradeCheckoutAction(data: {
   storeName: string;
   website?: string;
   description?: string;
-  plan: "starter" | "growth" | "agency";
+  plan: "free" | "starter" | "growth" | "agency";
   apiKeys: {
     anthropic?: string;
     openai?: string;
@@ -70,13 +70,14 @@ export async function createUpgradeCheckoutAction(data: {
   }
 
   const prices = {
+    free: 0.00,
     starter: 29.00,
     growth: 79.00,
     agency: 199.00,
   };
 
   const planPrice = prices[data.plan];
-  if (!planPrice) {
+  if (planPrice === undefined) {
     return { success: false, error: "Invalid subscription plan selected." };
   }
 
@@ -134,8 +135,8 @@ export async function createUpgradeCheckoutAction(data: {
         await tx.insert(userWorkflows).values(workflowsToInsert);
       }
 
-      // 4. Admin bypass: if user has role 'admin', upgrade immediately and skip payment
-      if (session.user.role === "admin") {
+      // 4. Admin or Free plan bypass: if user has role 'admin' or selected 'free' plan, upgrade immediately and skip payment
+      if (session.user.role === "admin" || data.plan === "free") {
         await tx.update(users)
           .set({ role: "supplier" })
           .where(eq(users.id, session.user.id));
@@ -144,14 +145,14 @@ export async function createUpgradeCheckoutAction(data: {
           userId: session.user.id,
           storeName: data.storeName,
           website: data.website || null,
-          description: `${data.description} (Admin Free Access Upgrade)`,
+          description: `${data.description} (${data.plan === "free" ? "Free Business Plan" : "Admin Free Access Upgrade"})`,
           status: "approved",
         });
 
         await tx.insert(subscriptions).values({
           userId: session.user.id,
           plan: data.plan,
-          status: "active", // Immediate active for admin
+          status: "active", // Immediate active for admin or free plan
         });
       } else {
         // Create pending subscription for shopper flow
@@ -163,7 +164,7 @@ export async function createUpgradeCheckoutAction(data: {
       }
     });
 
-    if (session.user.role === "admin") {
+    if (session.user.role === "admin" || data.plan === "free") {
       revalidatePath("/dashboard");
       revalidatePath("/dashboard/customer");
       revalidatePath("/dashboard/supplier");
@@ -179,6 +180,7 @@ export async function createUpgradeCheckoutAction(data: {
     }).returning();
 
     const planProductIds = {
+      free: "p_mock_free",
       starter: process.env.DODO_STARTER_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
       growth: process.env.DODO_GROWTH_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
       agency: process.env.DODO_AGENCY_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
