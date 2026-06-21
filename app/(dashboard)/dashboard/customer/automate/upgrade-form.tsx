@@ -82,26 +82,6 @@ function AutomateUpgradeForm() {
   const plan = form.watch("plan");
 
   const onSubmit = async (data: UpgradeFormValues) => {
-    // Helper function to check if a specific model provider requires a key
-    const checkKeyRequirement = (modelPrefix: string, providerName: string, keyVal?: string) => {
-      const isModelUsed = 
-        data.productModel.includes(modelPrefix) || 
-        data.emailModel.includes(modelPrefix) || 
-        data.inventoryModel.includes(modelPrefix);
-      if (isModelUsed && !keyVal) {
-        toast.error(`Please provide an API Key for ${providerName} to use its models.`);
-        return false;
-      }
-      return true;
-    };
-
-    if (!checkKeyRequirement("claude-3-5-sonnet", "Anthropic", data.anthropicKey)) return;
-    if (!checkKeyRequirement("gpt-4o", "OpenAI", data.openaiKey)) return;
-    if (!checkKeyRequirement("llama-3-groq", "Groq", data.groqKey)) return;
-    if (!checkKeyRequirement("deepseek-v3", "DeepSeek", data.deepseekKey)) return;
-    if (!checkKeyRequirement("gemini-1-5-pro", "Google Gemini", data.geminiKey)) return;
-    if (!checkKeyRequirement("openrouter", "OpenRouter", data.openrouterKey)) return;
-
     setIsLoading(true);
     try {
       const summaryDescription = `${data.description} | AI Task Config: [Product Copy: ${data.productModel}] [Emails: ${data.emailModel}] [Inventory: ${data.inventoryModel}] | Configured Providers: ` +
