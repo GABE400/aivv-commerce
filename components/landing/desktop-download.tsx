@@ -95,24 +95,25 @@ export function DesktopDownload() {
               className="space-y-4"
             >
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/download"
-                  className="flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+                <button
+                  onClick={() => alert("The macOS desktop build is coming soon! (macOS app bundles require compilation on macOS systems).")}
+                  className="flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20 cursor-pointer"
                 >
                   <svg className="size-4 mr-2 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.54 9.103 1.51 12.06 1.005 1.45 2.187 3.078 3.766 3.014 1.524-.065 2.1-.987 3.945-.987 1.838 0 2.37.987 3.963.957 1.62-.027 2.666-1.464 3.655-2.91 1.144-1.674 1.615-3.292 1.64-3.379-.03-.015-3.149-1.21-3.18-4.787-.025-2.985 2.443-4.42 2.553-4.484-1.393-2.053-3.548-2.285-4.316-2.336-2.007-.162-3.606 1.078-4.605 1.078zm.512-4.103c.857-1.045 1.433-2.5 1.277-3.95-1.24.05-2.748.825-3.637 1.87-1.12 1.29-1.46 2.766-1.27 4.195 1.39.11 2.77-.55 3.63-2.115z" />
                   </svg>
                   Download for macOS
-                </Link>
-                <Link
-                  href="/download"
-                  className="flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold bg-[#0A0E1A] text-white hover:bg-[#060912] border border-indigo-500/30 hover:border-indigo-500/60 transition-colors"
+                </button>
+                <a
+                  href="/download/aivv-commerce_0.1.0_x64_en-US.msi"
+                  download="aivv-commerce_0.1.0_x64_en-US.msi"
+                  className="flex items-center justify-center px-6 py-3 rounded-lg text-sm font-semibold bg-[#0A0E1A] text-white hover:bg-[#060912] border border-indigo-500/30 hover:border-indigo-500/60 transition-colors cursor-pointer"
                 >
                   <svg className="size-4 mr-2 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path d="M0 3.449L9.75 2.1v9.45H0V3.449zM0 12.45h9.75v9.45L0 20.551v-8.101zM11.25 1.875L24 0v11.55H11.25V1.875zM11.25 12.45H24v11.55l-12.75-1.875V12.45z" />
                   </svg>
                   Download for Windows
-                </Link>
+                </a>
               </div>
               <div className="space-y-1">
                 <p className="text-xs text-gray-500">
