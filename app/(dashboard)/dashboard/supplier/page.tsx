@@ -117,7 +117,7 @@ export default async function SupplierDashboard() {
           <div className="mt-4 text-xs text-accent font-bold">Items requiring shipment</div>
         </div>
         <div className="p-6 rounded-2xl glass border border-glass-border">
-          <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Supplier Health</div>
+          <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Business Health</div>
           <div className="text-4xl font-bold">100%</div>
           <div className="mt-4 text-xs text-emerald-500 font-bold">Perfect fulfillment score</div>
         </div>
@@ -135,7 +135,7 @@ export default async function SupplierDashboard() {
             />
          ) : (
             <div className="rounded-2xl glass border border-glass-border p-12 text-center text-muted-foreground italic">
-               <p>You have no active fulfillment jobs assigned to your supplier profile at this moment.</p>
+               <p>You have no active fulfillment jobs assigned to your business profile at this moment.</p>
                <p className="text-xs mt-2">New orders will appear here automatically based on product mappings.</p>
             </div>
          )}

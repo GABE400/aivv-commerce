@@ -86,7 +86,7 @@ export default function SupplierApplicationPage() {
         </Link>
         <div>
           <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Partner with us</h2>
-          <h1 className="text-3xl font-bold">Become a Supplier</h1>
+          <h1 className="text-3xl font-bold">Become a Business</h1>
         </div>
       </div>
 

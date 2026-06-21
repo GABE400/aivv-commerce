@@ -115,7 +115,7 @@ function AutomateUpgradeForm() {
       if (result.success) {
         if (result.bypassPayment) {
           toast.success("Account upgraded successfully (Admin Free Access)!");
-          window.location.href = "/dashboard";
+          window.location.href = "/dashboard/customer/automate";
         } else if (result.url) {
           toast.success("Checkout session created. Redirecting to payment...");
           window.location.href = result.url;

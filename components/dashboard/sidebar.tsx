@@ -38,8 +38,9 @@ export function Sidebar({ user }: { user: any }) {
 
   const supplierLinks = [
     { name: "Overview", href: "/dashboard/supplier", icon: LayoutDashboard },
-    { name: "Inventory", href: "/dashboard/supplier/inventory", icon: Box },
-    { name: "Fulfillment", href: "/dashboard/supplier/fulfillment", icon: Truck },
+    { name: "AI Automation", href: "/dashboard/customer/automate", icon: Sparkles },
+    { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
+    { name: "Shop Store", href: "/shop", icon: ShoppingBag },
   ];
 
   const customerLinks = [

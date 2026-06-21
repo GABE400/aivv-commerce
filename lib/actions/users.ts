@@ -83,86 +83,86 @@ export async function createUpgradeCheckoutAction(data: {
 
   try {
     // Shared: Setup API Keys & Workflows
-    await db.transaction(async (tx) => {
-      // 1. Insert API Keys
-      const keysToInsert = [];
-      const providers = ["anthropic", "openai", "groq", "deepseek", "gemini", "openrouter"] as const;
-      for (const provider of providers) {
-        const key = data.apiKeys[provider];
-        if (key) {
-          const { encrypted, iv } = encrypt(key);
-          keysToInsert.push({ userId: session.user.id, provider, encryptedKey: encrypted, iv });
-        }
-      }
-      if (keysToInsert.length > 0) {
-        await tx.insert(aiApiKeys).values(keysToInsert);
-      }
+    // Note: neon-http driver does not support db.transaction(), so we run sequential inserts.
 
-      // 2. Fetch templates
-      const templates = await tx.select().from(workflowTemplates);
-      const tMap = templates.reduce((acc, t) => {
-        acc[t.slug] = t.id;
-        return acc;
-      }, {} as Record<string, string>);
+    // 1. Insert API Keys
+    const keysToInsert = [];
+    const providers = ["anthropic", "openai", "groq", "deepseek", "gemini", "openrouter"] as const;
+    for (const provider of providers) {
+      const key = data.apiKeys[provider];
+      if (key) {
+        const { encrypted, iv } = encrypt(key);
+        keysToInsert.push({ userId: session.user.id, provider, encryptedKey: encrypted, iv });
+      }
+    }
+    if (keysToInsert.length > 0) {
+      await db.insert(aiApiKeys).values(keysToInsert);
+    }
 
-      // 3. Insert Workflows
-      const workflowsToInsert = [];
-      if (data.workflows.productModel !== "none" && tMap["product-copy"]) {
-        workflowsToInsert.push({
-          userId: session.user.id,
-          templateId: tMap["product-copy"],
-          provider: getProviderFromModel(data.workflows.productModel),
-          model: data.workflows.productModel,
-        });
-      }
-      if (data.workflows.emailModel !== "none" && tMap["email-responder"]) {
-        workflowsToInsert.push({
-          userId: session.user.id,
-          templateId: tMap["email-responder"],
-          provider: getProviderFromModel(data.workflows.emailModel),
-          model: data.workflows.emailModel,
-        });
-      }
-      if (data.workflows.inventoryModel !== "none" && tMap["inventory-sync"]) {
-        workflowsToInsert.push({
-          userId: session.user.id,
-          templateId: tMap["inventory-sync"],
-          provider: getProviderFromModel(data.workflows.inventoryModel),
-          model: data.workflows.inventoryModel,
-        });
-      }
-      if (workflowsToInsert.length > 0) {
-        await tx.insert(userWorkflows).values(workflowsToInsert);
-      }
+    // 2. Fetch templates
+    const templates = await db.select().from(workflowTemplates);
+    const tMap = templates.reduce((acc, t) => {
+      acc[t.slug] = t.id;
+      return acc;
+    }, {} as Record<string, string>);
 
-      // 4. Admin or Free plan bypass: if user has role 'admin' or selected 'free' plan, upgrade immediately and skip payment
-      if (session.user.role === "admin" || data.plan === "free") {
-        await tx.update(users)
-          .set({ role: "supplier" })
-          .where(eq(users.id, session.user.id));
+    // 3. Insert Workflows
+    const workflowsToInsert = [];
+    if (data.workflows.productModel !== "none" && tMap["product-copy"]) {
+      workflowsToInsert.push({
+        userId: session.user.id,
+        templateId: tMap["product-copy"],
+        provider: getProviderFromModel(data.workflows.productModel),
+        model: data.workflows.productModel,
+      });
+    }
+    if (data.workflows.emailModel !== "none" && tMap["email-responder"]) {
+      workflowsToInsert.push({
+        userId: session.user.id,
+        templateId: tMap["email-responder"],
+        provider: getProviderFromModel(data.workflows.emailModel),
+        model: data.workflows.emailModel,
+      });
+    }
+    if (data.workflows.inventoryModel !== "none" && tMap["inventory-sync"]) {
+      workflowsToInsert.push({
+        userId: session.user.id,
+        templateId: tMap["inventory-sync"],
+        provider: getProviderFromModel(data.workflows.inventoryModel),
+        model: data.workflows.inventoryModel,
+      });
+    }
+    if (workflowsToInsert.length > 0) {
+      await db.insert(userWorkflows).values(workflowsToInsert);
+    }
 
-        await tx.insert(supplierApplications).values({
-          userId: session.user.id,
-          storeName: data.storeName,
-          website: data.website || null,
-          description: `${data.description} (${data.plan === "free" ? "Free Business Plan" : "Admin Free Access Upgrade"})`,
-          status: "approved",
-        });
+    // 4. Admin or Free plan bypass: if user has role 'admin' or selected 'free' plan, upgrade immediately and skip payment
+    if (session.user.role === "admin" || data.plan === "free") {
+      await db.update(users)
+        .set({ role: "supplier" })
+        .where(eq(users.id, session.user.id));
 
-        await tx.insert(subscriptions).values({
-          userId: session.user.id,
-          plan: data.plan,
-          status: "active", // Immediate active for admin or free plan
-        });
-      } else {
-        // Create pending subscription for shopper flow
-        await tx.insert(subscriptions).values({
-          userId: session.user.id,
-          plan: data.plan,
-          status: "trialing", // Pending payment
-        });
-      }
-    });
+      await db.insert(supplierApplications).values({
+        userId: session.user.id,
+        storeName: data.storeName,
+        website: data.website || null,
+        description: `${data.description} (${data.plan === "free" ? "Free Business Plan" : "Admin Free Access Upgrade"})`,
+        status: "approved",
+      });
+
+      await db.insert(subscriptions).values({
+        userId: session.user.id,
+        plan: data.plan,
+        status: "active", // Immediate active for admin or free plan
+      });
+    } else {
+      // Create pending subscription for shopper flow
+      await db.insert(subscriptions).values({
+        userId: session.user.id,
+        plan: data.plan,
+        status: "trialing", // Pending payment
+      });
+    }
 
     if (session.user.role === "admin" || data.plan === "free") {
       revalidatePath("/dashboard");

@@ -47,7 +47,7 @@ export default async function AdminDashboard() {
         <div className="p-6 rounded-2xl glass border border-glass-border">
           <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Total Users</div>
           <div className="text-4xl font-bold">{stats.userCount}</div>
-          <div className="mt-4 text-xs text-purple-500 font-bold">Customer & Suppliers</div>
+          <div className="mt-4 text-xs text-purple-500 font-bold">Customers & Businesses</div>
         </div>
       </div>
 

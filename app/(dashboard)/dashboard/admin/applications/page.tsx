@@ -83,8 +83,8 @@ export default async function AdminApplicationsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Supply Chain Onboarding</h2>
-        <h1 className="text-3xl font-bold">Supplier Applications</h1>
+        <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">Onboarding</h2>
+        <h1 className="text-3xl font-bold">Business Applications</h1>
       </div>
 
       <DataTable 
