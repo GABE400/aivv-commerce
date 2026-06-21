@@ -17,7 +17,7 @@
         "height": 600,
         "resizable": true,
         "fullscreen": false,
-        "url": "http://localhost:3000/login?platform=desktop"
+        "url": "https://aivv.app/login?platform=desktop"
       }
     ],
     "security": {
