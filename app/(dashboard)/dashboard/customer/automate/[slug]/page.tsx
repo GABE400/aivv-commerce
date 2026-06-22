@@ -9,6 +9,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkflowPlayground } from "./playground-client";
+import { ModelSelector } from "@/components/dashboard/automate/model-selector";
 
 export default async function WorkflowExecutionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -98,11 +99,16 @@ export default async function WorkflowExecutionPage({ params }: { params: Promis
             <CardContent className="space-y-4">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Provider</div>
-                <div className="text-sm font-medium capitalize">{uw?.provider || "None"}</div>
+                <div className="text-sm font-medium capitalize text-white">{uw?.provider || "None"}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground mb-1">Model</div>
-                <div className="text-sm font-medium">{uw?.model || "None"}</div>
+                <div className="text-xs text-muted-foreground mb-1.5">Model</div>
+                <ModelSelector
+                  templateId={template.id}
+                  currentProvider={uw.provider}
+                  currentModel={uw.model}
+                  customPrompt={uw.customPrompt}
+                />
               </div>
             </CardContent>
           </Card>

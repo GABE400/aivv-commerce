@@ -11,9 +11,24 @@ import { encrypt } from "@/lib/encryption";
 
 function getProviderFromModel(model: string) {
   if (model.includes("openrouter") || model.startsWith("openrouter/")) return "openrouter";
+  if (model.startsWith("groq/")) return "groq";
+
+  const groqModels = [
+    "llama-3.3-70b-versatile",
+    "deepseek-r1-distill-llama-70b",
+    "groq/compound",
+    "groq/compound-mini",
+    "llama-3.1-8b-instant",
+    "llama-guard-3-8b",
+    "gemma2-9b-it",
+    "mixtral-8x7b-32768",
+    "llama3-70b-8192",
+    "llama3-8b-8192"
+  ];
+  if (groqModels.includes(model)) return "groq";
+
   if (model.includes("claude")) return "anthropic";
   if (model.includes("gpt")) return "openai";
-  if (model.includes("llama")) return "groq";
   if (model.includes("deepseek")) return "deepseek";
   if (model.includes("gemini")) return "gemini";
   return "unknown";

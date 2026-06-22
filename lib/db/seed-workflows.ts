@@ -11,8 +11,8 @@ async function main() {
       name: "Meeting & Document Summarizer",
       description: "Summarize meeting transcripts, notes, and general texts.",
       category: "productivity",
-      defaultModel: "claude-3-5-sonnet-20241022",
-      defaultProvider: "anthropic",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
       promptTemplate: "Summarize the following document into a {{targetLength}} summary: {{documentText}}.",
       inputSchema: JSON.stringify({
         documentText: { type: "longtext", label: "Document / Transcript Content", placeholder: "Paste your transcript, meeting notes, or document text here..." },
@@ -29,8 +29,8 @@ async function main() {
       name: "General Email Responder",
       description: "Draft replies to client inquiries, feedback, or follow-ups.",
       category: "communications",
-      defaultModel: "gpt-4o",
-      defaultProvider: "openai",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
       promptTemplate: "Draft a professional email reply with a {{tone}} tone for the following email: {{customerEmail}}.",
       inputSchema: JSON.stringify({
         customerEmail: { type: "longtext", label: "Incoming Email Content", placeholder: "Paste the email you received..." },
@@ -46,8 +46,8 @@ async function main() {
       name: "Invoice & Billing Assistant",
       description: "Extract details from invoices or generate payment reminders.",
       category: "operations",
-      defaultModel: "none",
-      defaultProvider: "none",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
       promptTemplate: "Perform the task '{{task}}' on the following invoice/billing data: {{invoiceData}}.",
       inputSchema: JSON.stringify({
         invoiceData: { type: "longtext", label: "Raw Invoice / Billing Data", placeholder: "Paste invoice line items, XML, CSV, or text here..." },

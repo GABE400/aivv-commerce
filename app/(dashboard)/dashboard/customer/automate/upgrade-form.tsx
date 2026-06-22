@@ -58,9 +58,9 @@ function AutomateUpgradeForm() {
       deepseekKey: "",
       geminiKey: "",
       openrouterKey: "",
-      summarizerModel: "claude-3-5-sonnet-20241022",
-      emailModel: "gpt-4o",
-      invoiceModel: "none",
+      summarizerModel: "llama-3.3-70b-versatile",
+      emailModel: "llama-3.3-70b-versatile",
+      invoiceModel: "llama-3.3-70b-versatile",
       plan: "free",
       agreeUpgrade: false,
     },
@@ -346,7 +346,16 @@ function AutomateUpgradeForm() {
                   >
                     <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq - Default)</option>
+                    <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Llama 70B (Groq - Reasoning)</option>
+                    <option value="groq/compound">Groq Compound (Groq - Agentic)</option>
+                    <option value="groq/compound-mini">Groq Compound Mini (Groq - Agentic Mini)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Groq - Fast)</option>
+                    <option value="llama-guard-3-8b">Llama Guard 3 8B (Groq - Safety)</option>
+                    <option value="gemma2-9b-it">Gemma 2 9B (Groq)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                    <option value="llama3-70b-8192">Llama 3 70B (Groq)</option>
+                    <option value="llama3-8b-8192">Llama 3 8B (Groq)</option>
                     <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
@@ -366,7 +375,16 @@ function AutomateUpgradeForm() {
                   >
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
                     <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq - Default)</option>
+                    <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Llama 70B (Groq - Reasoning)</option>
+                    <option value="groq/compound">Groq Compound (Groq - Agentic)</option>
+                    <option value="groq/compound-mini">Groq Compound Mini (Groq - Agentic Mini)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Groq - Fast)</option>
+                    <option value="llama-guard-3-8b">Llama Guard 3 8B (Groq - Safety)</option>
+                    <option value="gemma2-9b-it">Gemma 2 9B (Groq)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                    <option value="llama3-70b-8192">Llama 3 70B (Groq)</option>
+                    <option value="llama3-8b-8192">Llama 3 8B (Groq)</option>
                     <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
@@ -387,7 +405,16 @@ function AutomateUpgradeForm() {
                     <option value="none">Disabled (Strict Sync)</option>
                     <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq - Default)</option>
+                    <option value="deepseek-r1-distill-llama-70b">DeepSeek R1 Llama 70B (Groq - Reasoning)</option>
+                    <option value="groq/compound">Groq Compound (Groq - Agentic)</option>
+                    <option value="groq/compound-mini">Groq Compound Mini (Groq - Agentic Mini)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant (Groq - Fast)</option>
+                    <option value="llama-guard-3-8b">Llama Guard 3 8B (Groq - Safety)</option>
+                    <option value="gemma2-9b-it">Gemma 2 9B (Groq)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7B (Groq)</option>
+                    <option value="llama3-70b-8192">Llama 3 70B (Groq)</option>
+                    <option value="llama3-8b-8192">Llama 3 8B (Groq)</option>
                     <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
                     <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
