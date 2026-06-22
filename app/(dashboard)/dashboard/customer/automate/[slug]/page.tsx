@@ -6,25 +6,39 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ChevronLeft, Play, Settings } from "lucide-react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { WorkflowPlayground } from "./playground-client";
 
-export default async function WorkflowExecutionPage({ params }: { params: { slug: string } }) {
+export default async function WorkflowExecutionPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) redirect("/login");
 
   // Fetch the template
-  const templates = await db.select().from(workflowTemplates).where(eq(workflowTemplates.slug, params.slug)).limit(1);
-  if (!templates.length) return <div>Workflow template not found.</div>;
+  const templates = await db.select().from(workflowTemplates).where(eq(workflowTemplates.slug, slug)).limit(1);
+  if (!templates.length) return <div className="p-8 text-center text-muted-foreground">Workflow template not found.</div>;
   const template = templates[0];
 
   // Fetch user's workflow configuration
-  const uws = await db.select()
+  let uws = await db.select()
     .from(userWorkflows)
     .where(and(eq(userWorkflows.userId, session.user.id), eq(userWorkflows.templateId, template.id)))
     .limit(1);
     
-  const uw = uws[0];
+  let uw = uws[0];
+
+  // Auto-initialize with default Groq configuration if not yet created
+  if (!uw) {
+    const [newUw] = await db.insert(userWorkflows).values({
+      userId: session.user.id,
+      templateId: template.id,
+      provider: "groq",
+      model: "llama-3.3-70b-versatile",
+      status: "active",
+    }).returning();
+    uw = newUw;
+  }
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -63,9 +77,11 @@ export default async function WorkflowExecutionPage({ params }: { params: { slug
                   This workflow is not fully configured. Please ensure you have mapped a model and provided the necessary API keys in your settings.
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground p-4 bg-muted/20 border border-glass-border rounded-lg">
-                  Execution UI is currently being wired up to the API. Check back soon for the interactive playground.
-                </div>
+                <WorkflowPlayground
+                  userWorkflowId={uw.id}
+                  inputSchemaStr={template.inputSchema || "{}"}
+                  outputSchemaStr={template.outputSchema || "{}"}
+                />
               )}
             </CardContent>
           </Card>

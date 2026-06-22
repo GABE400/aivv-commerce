@@ -56,9 +56,9 @@ export async function createUpgradeCheckoutAction(data: {
     openrouter?: string;
   };
   workflows: {
-    productModel: string;
+    summarizerModel: string;
     emailModel: string;
-    inventoryModel: string;
+    invoiceModel: string;
   };
 }) {
   const session = await auth.api.getSession({
@@ -108,12 +108,12 @@ export async function createUpgradeCheckoutAction(data: {
 
     // 3. Insert Workflows
     const workflowsToInsert = [];
-    if (data.workflows.productModel !== "none" && tMap["product-copy"]) {
+    if (data.workflows.summarizerModel !== "none" && tMap["document-summarizer"]) {
       workflowsToInsert.push({
         userId: session.user.id,
-        templateId: tMap["product-copy"],
-        provider: getProviderFromModel(data.workflows.productModel),
-        model: data.workflows.productModel,
+        templateId: tMap["document-summarizer"],
+        provider: getProviderFromModel(data.workflows.summarizerModel),
+        model: data.workflows.summarizerModel,
       });
     }
     if (data.workflows.emailModel !== "none" && tMap["email-responder"]) {
@@ -124,12 +124,12 @@ export async function createUpgradeCheckoutAction(data: {
         model: data.workflows.emailModel,
       });
     }
-    if (data.workflows.inventoryModel !== "none" && tMap["inventory-sync"]) {
+    if (data.workflows.invoiceModel !== "none" && tMap["invoice-assistant"]) {
       workflowsToInsert.push({
         userId: session.user.id,
-        templateId: tMap["inventory-sync"],
-        provider: getProviderFromModel(data.workflows.inventoryModel),
-        model: data.workflows.inventoryModel,
+        templateId: tMap["invoice-assistant"],
+        provider: getProviderFromModel(data.workflows.invoiceModel),
+        model: data.workflows.invoiceModel,
       });
     }
     if (workflowsToInsert.length > 0) {
@@ -138,9 +138,6 @@ export async function createUpgradeCheckoutAction(data: {
 
     // 4. Admin or Free plan bypass: if user has role 'admin' or selected 'free' plan, upgrade immediately and skip payment
     if (session.user.role === "admin" || data.plan === "free") {
-      await db.update(users)
-        .set({ role: "supplier" })
-        .where(eq(users.id, session.user.id));
 
       await db.insert(supplierApplications).values({
         userId: session.user.id,

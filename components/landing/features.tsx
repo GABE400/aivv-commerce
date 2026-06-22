@@ -20,28 +20,28 @@ const features = [
     icon: Globe,
   },
   {
-    title: "No Inventory Required",
-    description: "Sell print-on-demand and dropshipping products without holding any stock.",
+    title: "On-Demand Shop",
+    description: "Browse and buy custom print-on-demand items, manufactured and shipped on demand.",
     icon: Package,
   },
   {
-    title: "Automated Fulfillment",
-    description: "Orders are automatically sent to suppliers for production and shipping.",
+    title: "Bring Your Own Key",
+    description: "Connect Anthropic, OpenAI, Gemini, or OpenRouter keys, or run using our default Groq connection.",
     icon: Zap,
   },
   {
-    title: "Secure Identity Hub",
-    description: "Enterprise-grade authentication with multi-tenant support and granular permissions.",
+    title: "Granular Security",
+    description: "Enterprise-grade authentication with local encryption for API credentials.",
     icon: Lock,
   },
   {
-    title: "Supplier Abstraction",
-    description: "A unified system to manage multiple suppliers under one dashboard.",
+    title: "Task-Specific Routing",
+    description: "Map different models (Claude, GPT, Llama) to specific tasks to balance cost and latency.",
     icon: Layers,
   },
   {
-    title: "Real-time Analytics",
-    description: "Monitor your revenue, orders, and supplier performance in real-time.",
+    title: "Execution Logs & Analytics",
+    description: "Monitor workflow runs, log histories, and token consumption in real-time.",
     icon: BarChart3,
   },
 ];
@@ -68,8 +68,7 @@ export function Features() {
             transition={{ delay: 0.1 }}
             className="text-lg text-muted-foreground"
           >
-            Automated Intelligent Virtual Ventures provides everything you need to build and scale your 
-            e-commerce empire without the operational overhead.
+            Automated Intelligent Virtual Ventures provides a premium consumer storefront and an advanced AI automation workspace for B2B operations.
           </motion.p>
         </div>
 
@@ -118,7 +117,7 @@ export function Features() {
                   Global payments, handled.
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
-                  Automated Intelligent Virtual Ventures integrates with Dodo Payments — your Merchant of Record for automatic tax compliance, multi-currency checkout, and global payouts. Sell anywhere, comply everywhere.
+                  Automated Intelligent Virtual Ventures integrates with Dodo Payments — your Merchant of Record for automatic tax compliance, multi-currency checkout, and global payouts. Subscribe or shop globally with ease.
                 </p>
               </div>
 

@@ -33,12 +33,13 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Orders", href: "/dashboard/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/dashboard/admin/users", icon: Users },
     { name: "User Dashboard", href: "/dashboard/customer", icon: ShoppingBag },
-    { name: "Business Dashboard", href: "/dashboard/supplier", icon: Box },
+    { name: "Operations Console", href: "/dashboard/supplier", icon: Box },
   ];
 
   const supplierLinks = [
     { name: "Overview", href: "/dashboard/supplier", icon: LayoutDashboard },
-    { name: "AI Automation", href: "/dashboard/customer/automate", icon: Sparkles },
+    { name: "AI Automation Workspace", href: "/dashboard/customer/automate", icon: Sparkles },
+    { name: "Billing", href: "/dashboard/user/billing", icon: CreditCard },
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
     { name: "Shop Store", href: "/shop", icon: ShoppingBag },
   ];
@@ -48,7 +49,7 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Overview", href: "/dashboard/customer", icon: LayoutDashboard },
     { name: "Orders", href: "/dashboard/customer/orders", icon: ShoppingCart },
     { name: "Library", href: "/dashboard/customer/library", icon: Box },
-    { name: "AI Automation", href: "/dashboard/customer/automate", icon: Sparkles },
+    { name: "AI Automation Workspace", href: "/dashboard/customer/automate", icon: Sparkles },
     { name: "Billing", href: "/dashboard/user/billing", icon: CreditCard },
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
   ];

@@ -3,9 +3,9 @@ import { userWorkflows, workflowTemplates, aiApiKeys, workflowExecutions } from 
 import { eq, and } from "drizzle-orm";
 import { decrypt } from "@/lib/encryption";
 import { getProvider } from "./providers";
-import { buildProductCopyPrompt } from "./templates/product-copy";
+import { buildDocumentSummarizerPrompt } from "./templates/document-summarizer";
 import { buildEmailResponderPrompt } from "./templates/email-responder";
-import { buildInventorySyncPrompt } from "./templates/inventory-sync";
+import { buildInvoiceAssistantPrompt } from "./templates/invoice-assistant";
 
 export async function executeWorkflow(params: {
   userId: string;
@@ -38,25 +38,30 @@ export async function executeWorkflow(params: {
     .where(and(eq(aiApiKeys.userId, userId), eq(aiApiKeys.provider, uw.provider)))
     .limit(1);
 
-  if (!keyResult.length) {
-    throw new Error(`API Key for provider ${uw.provider} not found.`);
+  let apiKey: string | null = null;
+
+  if (keyResult.length > 0) {
+    const apiKeyData = keyResult[0];
+    apiKey = decrypt(apiKeyData.encryptedKey, apiKeyData.iv);
   }
 
-  const apiKeyData = keyResult[0];
-  const apiKey = decrypt(apiKeyData.encryptedKey, apiKeyData.iv);
+  // Fallback for Groq (default platform AI) if no user key is connected
+  if (!apiKey && uw.provider === "groq") {
+    apiKey = process.env.GROQ_API_KEY || null;
+  }
 
   if (!apiKey) {
-    throw new Error(`Failed to decrypt API Key for provider ${uw.provider}.`);
+    throw new Error(`API Key for provider ${uw.provider} not found. Please connect your API key in settings.`);
   }
 
   // 3. Build Prompt
   let prompt = "";
-  if (template.slug === "product-copy") {
-    prompt = buildProductCopyPrompt(input.productName || "", input.features || "");
+  if (template.slug === "document-summarizer") {
+    prompt = buildDocumentSummarizerPrompt(input.documentText || "", input.targetLength || "");
   } else if (template.slug === "email-responder") {
-    prompt = buildEmailResponderPrompt(input.issue || "", input.context || "");
-  } else if (template.slug === "inventory-sync") {
-    prompt = buildInventorySyncPrompt(input.supplierItems || "", input.localVariants || "");
+    prompt = buildEmailResponderPrompt(input.customerEmail || "", input.tone || "");
+  } else if (template.slug === "invoice-assistant") {
+    prompt = buildInvoiceAssistantPrompt(input.invoiceData || "", input.task || "");
   } else {
     throw new Error(`Unknown workflow template slug: ${template.slug}`);
   }

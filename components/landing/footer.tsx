@@ -17,7 +17,6 @@ const footerLinks = {
   ],
   Company: [
     { name: "About", href: "#" },
-    { name: "Become a Supplier", href: "/dashboard/customer/apply" },
     { name: "Legal", href: "#" },
     { name: "Contact", href: "#" },
   ],

@@ -26,9 +26,9 @@ const upgradeSchema = z.object({
   deepseekKey: z.string().optional(),
   geminiKey: z.string().optional(),
   openrouterKey: z.string().optional(),
-  productModel: z.string(),
+  summarizerModel: z.string(),
   emailModel: z.string(),
-  inventoryModel: z.string(),
+  invoiceModel: z.string(),
   plan: z.enum(["free", "starter", "growth", "agency"]),
   agreeUpgrade: z.boolean().refine((val) => val === true, {
     message: "You must agree to upgrade your account",
@@ -58,9 +58,9 @@ function AutomateUpgradeForm() {
       deepseekKey: "",
       geminiKey: "",
       openrouterKey: "",
-      productModel: "claude-3-5-sonnet",
+      summarizerModel: "claude-3-5-sonnet-20241022",
       emailModel: "gpt-4o",
-      inventoryModel: "none",
+      invoiceModel: "none",
       plan: "free",
       agreeUpgrade: false,
     },
@@ -84,7 +84,7 @@ function AutomateUpgradeForm() {
   const onSubmit = async (data: UpgradeFormValues) => {
     setIsLoading(true);
     try {
-      const summaryDescription = `${data.description} | AI Task Config: [Product Copy: ${data.productModel}] [Emails: ${data.emailModel}] [Inventory: ${data.inventoryModel}] | Configured Providers: ` +
+      const summaryDescription = `${data.description} | AI Task Config: [Summarizer: ${data.summarizerModel}] [Emails: ${data.emailModel}] [Invoice: ${data.invoiceModel}] | Configured Providers: ` +
         `[Anthropic: ${data.anthropicKey ? "Yes" : "No"}] ` +
         `[OpenAI: ${data.openaiKey ? "Yes" : "No"}] ` +
         `[Groq: ${data.groqKey ? "Yes" : "No"}] ` +
@@ -106,9 +106,9 @@ function AutomateUpgradeForm() {
           openrouter: data.openrouterKey,
         },
         workflows: {
-          productModel: data.productModel,
+          summarizerModel: data.summarizerModel,
           emailModel: data.emailModel,
-          inventoryModel: data.inventoryModel,
+          invoiceModel: data.invoiceModel,
         }
       });
 
@@ -252,7 +252,7 @@ function AutomateUpgradeForm() {
                 <span>2. Connect Your AI API Keys</span>
               </div>
               <p className="text-xs text-muted-foreground">
-                We do not supply default AI models. Input your own API keys to enable automation. Keys are encrypted and processed locally.
+                Groq is supported by default using our platform keys. To use other providers (Anthropic, OpenAI, Gemini, etc.) or your own Groq quotas, connect your custom API keys below. Keys are encrypted and processed locally.
               </p>
 
               <div className="space-y-4">
@@ -337,18 +337,18 @@ function AutomateUpgradeForm() {
               <div className="space-y-4">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
                   <div>
-                    <div className="text-xs font-bold text-white">Product Copy & Descriptions</div>
-                    <div className="text-[10px] text-muted-foreground">Used for generating item names, titles, and SEO meta tags.</div>
+                    <div className="text-xs font-bold text-white">Meeting & Document Summarizer</div>
+                    <div className="text-[10px] text-muted-foreground">Summarize transcripts, notes, and general texts.</div>
                   </div>
                   <select 
-                    {...form.register("productModel")}
+                    {...form.register("summarizerModel")}
                     className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
                   >
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
                     <option value="openrouter/google/gemini-2.5-pro">Gemini 2.5 Pro (OpenRouter)</option>
                     <option value="none">Manual Copywriting Only</option>
@@ -357,18 +357,18 @@ function AutomateUpgradeForm() {
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
                   <div>
-                    <div className="text-xs font-bold text-white">Customer Email Auto-Responder</div>
-                    <div className="text-[10px] text-muted-foreground">Handles shipment notifications and buyer tracking support.</div>
+                    <div className="text-xs font-bold text-white">General Email Responder</div>
+                    <div className="text-[10px] text-muted-foreground">Draft replies to client inquiries, feedback, or follow-ups.</div>
                   </div>
                   <select 
                     {...form.register("emailModel")}
                     className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
                   >
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
                     <option value="openrouter/google/gemini-2.5-pro">Gemini 2.5 Pro (OpenRouter)</option>
                     <option value="none">Disabled</option>
@@ -377,19 +377,19 @@ function AutomateUpgradeForm() {
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 p-3 rounded-lg border border-glass-border bg-[#1A1F35]/20">
                   <div>
-                    <div className="text-xs font-bold text-white">Inventory Sync & Mappings</div>
-                    <div className="text-[10px] text-muted-foreground">Correlates Printify product options to local variants.</div>
+                    <div className="text-xs font-bold text-white">Invoice & Billing Assistant</div>
+                    <div className="text-[10px] text-muted-foreground">Extract details from invoices or generate payment reminders.</div>
                   </div>
                   <select 
-                    {...form.register("inventoryModel")}
+                    {...form.register("invoiceModel")}
                     className="h-9 rounded-lg border border-glass-border bg-[#1A1F35] text-xs text-white px-2 focus:border-accent outline-none w-full md:w-56"
                   >
                     <option value="none">Disabled (Strict Sync)</option>
-                    <option value="claude-3-5-sonnet">Claude 3.5 Sonnet (Anthropic)</option>
+                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet (Anthropic)</option>
                     <option value="gpt-4o">GPT-4o (OpenAI)</option>
-                    <option value="llama-3-groq">Llama 3 70B (Groq)</option>
-                    <option value="deepseek-v3">DeepSeek-V3 (DeepSeek)</option>
-                    <option value="gemini-1-5-pro">Gemini 1.5 Pro (Google)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                    <option value="deepseek-chat">DeepSeek-V3 (DeepSeek)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Google)</option>
                     <option value="openrouter/meta-llama/llama-3-8b-instruct:free">Llama 3 8B Free (OpenRouter)</option>
                     <option value="openrouter/google/gemini-2.5-pro">Gemini 2.5 Pro (OpenRouter)</option>
                   </select>
@@ -405,7 +405,7 @@ function AutomateUpgradeForm() {
                 className="mt-0.5 border-accent data-[state=checked]:bg-accent data-[state=checked]:text-white animate-none"
               />
               <Label htmlFor="agreeUpgrade" className="text-xs leading-relaxed text-muted-foreground cursor-pointer select-none">
-                I agree to upgrade my Aivv account to a business profile. I understand I will immediately gain access to supplier tools and AI integrations.
+                I agree to upgrade my Aivv account to a business profile. I understand I will immediately gain access to AI automation workflows and integration options.
               </Label>
             </div>
             {form.formState.errors.agreeUpgrade && (

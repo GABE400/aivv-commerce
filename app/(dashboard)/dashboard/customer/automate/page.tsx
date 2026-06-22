@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import { getUserSubscription } from "@/lib/actions/ai";
+import { getUserSubscription, getUserWorkflows } from "@/lib/actions/ai";
 import AutomateUpgradePage from "./upgrade-form";
-import { Loader2, LayoutDashboard, Settings, Key, Zap, List } from "lucide-react";
+import { Loader2, Key, Zap, List } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +13,16 @@ export default async function AutomatePage() {
     return <AutomateUpgradePage />;
   }
 
+  const workflows = await getUserWorkflows();
+
+  const hasWorkflow = (slug: string) => {
+    return workflows.some(w => w.template?.slug === slug && w.status === "active");
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold">AI Automation Console</h1>
+        <h1 className="text-3xl font-bold">AI Automation Workspace</h1>
         <p className="text-muted-foreground mt-2">Manage your active workflows, API keys, and monitor usage.</p>
       </div>
 
@@ -71,38 +77,50 @@ export default async function AutomatePage() {
           Active Workflows
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link href="/dashboard/customer/automate/product-copy">
+          <Link href="/dashboard/customer/automate/document-summarizer">
              <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
-               <CardHeader>
-                 <CardTitle className="text-lg">Product Copywriter</CardTitle>
-                 <CardDescription>Generate item names, titles, and SEO meta tags.</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <Badge variant="outline">Configured</Badge>
-               </CardContent>
-             </Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Meeting & Document Summarizer</CardTitle>
+                  <CardDescription>Summarize meeting transcripts, notes, and general texts.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasWorkflow("document-summarizer") ? (
+                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
+                  )}
+                </CardContent>
+              </Card>
           </Link>
           <Link href="/dashboard/customer/automate/email-responder">
              <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
-               <CardHeader>
-                 <CardTitle className="text-lg">Email Auto-Responder</CardTitle>
-                 <CardDescription>Handles shipment notifications and buyer tracking support.</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <Badge variant="outline">Configured</Badge>
-               </CardContent>
-             </Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">General Email Responder</CardTitle>
+                  <CardDescription>Draft replies to client inquiries, feedback, or follow-ups.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasWorkflow("email-responder") ? (
+                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
+                  )}
+                </CardContent>
+              </Card>
           </Link>
-          <Link href="/dashboard/customer/automate/inventory-sync">
-             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
-               <CardHeader>
-                 <CardTitle className="text-lg">Inventory Mapping</CardTitle>
-                 <CardDescription>Correlates Printify product options to local variants.</CardDescription>
-               </CardHeader>
-               <CardContent>
-                 <Badge variant="outline">Configured</Badge>
-               </CardContent>
-             </Card>
+          <Link href="/dashboard/customer/automate/invoice-assistant">
+             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer col-span-1 md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg">Invoice & Billing Assistant</CardTitle>
+                  <CardDescription>Extract details from invoices or generate payment reminders.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasWorkflow("invoice-assistant") ? (
+                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
+                  )}
+                </CardContent>
+              </Card>
           </Link>
         </div>
       </div>

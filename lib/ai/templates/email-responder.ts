@@ -1,13 +1,13 @@
-export function buildEmailResponderPrompt(issue: string, context: string) {
-  return `You are a helpful customer support agent for an ecommerce store.
-Draft an email to a customer regarding their issue. Keep the tone professional and empathetic.
+export function buildEmailResponderPrompt(customerEmail: string, tone: string) {
+  return `You are an AI business communications assistant.
+Draft an email reply to the incoming email. Use a tone of "${tone}".
 
-Customer Issue: ${issue}
-Context/Resolution: ${context}
+Incoming Email:
+${customerEmail}
 
 Return your response strictly as JSON matching this schema:
 {
   "subject": "Clear, relevant subject line",
-  "body": "The complete email body"
+  "body": "The complete email reply body"
 }`;
 }

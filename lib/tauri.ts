@@ -10,8 +10,14 @@ export function useIsTauri() {
         "__TAURI_INTERNALS__" in window ||
         window.location.search.includes("platform=desktop") ||
         window.location.search.includes("tauri=true") ||
-        (window as any).isTauri === true;
-      setIsTauri(hasTauri);
+        (window as Window & { isTauri?: boolean }).isTauri === true;
+      
+      // Delay state update to avoid synchronous setState in effect body
+      const timer = setTimeout(() => {
+        setIsTauri(hasTauri);
+      }, 0);
+
+      return () => clearTimeout(timer);
     }
   }, []);
 

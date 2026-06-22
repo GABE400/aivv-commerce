@@ -33,7 +33,7 @@ export default async function DashboardLayout({
             <div className="flex items-center justify-between mb-8">
                <div>
                   <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-1">
-                     {role === 'admin' ? 'Master Control' : role === 'supplier' ? 'Business Portal' : 'My Account'}
+                     {role === 'admin' ? 'Master Control' : role === 'supplier' ? 'Operations Portal' : 'My Account'}
                   </h2>
                   <h1 className="text-3xl font-bold">
                      Dashboard

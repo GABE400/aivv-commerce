@@ -1,14 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { motion } from "motion/react";
 import { Container } from "@/components/ui/container";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import Link from "next/link";
 
 const automationTiers = [
@@ -74,19 +71,6 @@ const automationTiers = [
 ];
 
 export function Pricing() {
-  const [email, setEmail] = useState("");
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const handleWaitlistSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !email.includes("@")) {
-      toast.error("Please enter a valid email address.");
-      return;
-    }
-    setIsSubmitted(true);
-    toast.success("Thanks for your interest! We've added you to the sellers waitlist.");
-    setEmail("");
-  };
 
   return (
     <section id="pricing" className="py-24 relative overflow-hidden bg-background border-t border-glass-border">
@@ -187,57 +171,7 @@ export function Pricing() {
           </div>
         </div>
 
-        {/* Block 2: Seller Plans (Coming Soon) */}
-        <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-glass-border bg-glass text-[10px] font-bold text-accent uppercase tracking-wider mb-4">
-              Seller Plans
-            </div>
-            <h3 className="text-2xl md:text-3xl font-extrabold text-foreground">Coming Soon</h3>
-          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-          >
-            <Card className="border border-glass-border bg-glass-card/45 relative overflow-hidden group p-8 md:p-12 text-center">
-              <div className="absolute top-4 right-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-[9px] font-bold uppercase tracking-wider">
-                Waiting List
-              </div>
-              <CardContent className="space-y-6 max-w-lg mx-auto p-0">
-                <p className="text-sm md:text-base text-muted-foreground leading-relaxed">
-                  Want to sell your own products through Aivv? We're opening the marketplace soon.
-                </p>
-                
-                {!isSubmitted ? (
-                  <form onSubmit={handleWaitlistSubmit} className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                    <Input
-                      type="email"
-                      placeholder="Enter your email address"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-12 rounded-xl glass border border-glass-border focus:border-accent bg-transparent px-4 w-full text-center sm:text-left"
-                      required
-                    />
-                    <Button type="submit" className="h-12 px-8 font-bold accent-gradient text-white shadow-xl shadow-accent/20 rounded-xl w-full sm:w-auto shrink-0 transition-transform active:scale-95 cursor-pointer">
-                      Join Waitlist
-                    </Button>
-                  </form>
-                ) : (
-                  <motion.div 
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-sm"
-                  >
-                    <Check className="size-4" />
-                    You are on the list! We'll email you updates.
-                  </motion.div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
 
         {/* Global Payments Disclaimer */}
         <motion.p

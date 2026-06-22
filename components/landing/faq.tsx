@@ -12,8 +12,8 @@ const faqs = [
     answer: "No. Our store runs on print-on-demand via Printify. Every product is made and shipped when you order — no stock, no waiting.",
   },
   {
-    question: "I want to sell my own products through Aivv. Do I need inventory?",
-    answer: "Yes. If you want to sell through Aivv's marketplace, you'll manage your own physical stock from your warehouse or store. We handle the storefront and payments — you handle fulfillment.",
+    question: "Can I connect my own dropshipping or Printify account to sell?",
+    answer: "No. Aivv owns and operates the storefront and dropshipping/POD fulfillment catalog directly. Platform users cannot connect their own dropshipping accounts or sell items themselves — they can purchase designs, or subscribe to use the B2B AI automation workspace.",
   },
   {
     question: "How does payment processing work?",

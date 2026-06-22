@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, use } from "react";
 import { useCart } from "@/lib/store/use-cart";
 import { Container } from "@/components/ui/container";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import { CheckCircle2, Package, ArrowRight, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { motion } from "motion/react";
 
-export default function OrderSuccessPage({ params }: { params: { id: string } }) {
+export default function OrderSuccessPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const { clearCart } = useCart();
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export default function OrderSuccessPage({ params }: { params: { id: string } })
           <div className="space-y-4">
             <h1 className="text-4xl font-bold">Purchase Successful!</h1>
             <p className="text-xl text-muted-foreground leading-relaxed">
-              Your order <span className="text-foreground font-mono font-bold">#{params.id.substring(0, 8)}</span> has been confirmed 
+              Your order <span className="text-foreground font-mono font-bold">#{id.substring(0, 8)}</span> has been confirmed 
               and is now entering our global supply chain.
             </p>
           </div>

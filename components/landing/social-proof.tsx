@@ -21,7 +21,7 @@ const badges = [
     icon: Cloud,
   },
   {
-    name: "Your Supplier",
+    name: "CJ Dropshipping",
     color: "border-purple-500/20 dark:border-purple-400/20 bg-purple-500/5 text-purple-600 dark:text-purple-400",
     dotColor: "bg-purple-500 dark:bg-purple-600",
     icon: Truck,

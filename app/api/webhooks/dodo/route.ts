@@ -26,12 +26,7 @@ export async function POST(req: Request) {
 
       if (orderId && metadata?.type === "subscription_upgrade") {
         await db.transaction(async (tx) => {
-          // 1. Upgrade user's role to supplier
-          await tx.update(users)
-            .set({ role: "supplier" })
-            .where(eq(users.id, metadata.userId));
-
-          // 2. Insert approved supplier application
+          // 1. Insert approved supplier application
           await tx.insert(supplierApplications).values({
             userId: metadata.userId,
             storeName: metadata.storeName,
