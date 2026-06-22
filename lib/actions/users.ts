@@ -220,7 +220,7 @@ export async function createUpgradeCheckoutAction(data: {
   }
 }
 
-export async function updateUserRoleAction(targetUserId: string, newRole: "admin" | "supplier" | "customer") {
+export async function updateUserRoleAction(targetUserId: string, newRole: "admin" | "business" | "customer") {
   const session = await auth.api.getSession({
     headers: await headers()
   });

@@ -37,7 +37,7 @@ export function UsersClient({ initialUsers, currentUserId }: UsersClientProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const handleRoleChange = (userId: string, newRole: "admin" | "supplier" | "customer") => {
+  const handleRoleChange = (userId: string, newRole: "admin" | "business" | "customer") => {
     setUpdatingId(userId);
     startTransition(async () => {
       try {
@@ -88,11 +88,11 @@ export function UsersClient({ initialUsers, currentUserId }: UsersClientProps) {
             Admin
           </Badge>
         );
-      case "supplier":
+      case "business":
         return (
           <Badge className="bg-cyan-500/10 border-cyan-500/20 text-cyan-500 hover:bg-cyan-500/15 gap-1 py-0.5">
             <Award className="size-3" />
-            Supplier
+            Business
           </Badge>
         );
       default:
@@ -185,7 +185,7 @@ export function UsersClient({ initialUsers, currentUserId }: UsersClientProps) {
                 </SelectTrigger>
                 <SelectContent className="glass border-glass-border">
                   <SelectItem value="customer">Shopper</SelectItem>
-                  <SelectItem value="supplier">Supplier</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>

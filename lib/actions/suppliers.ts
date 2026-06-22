@@ -12,12 +12,12 @@ export async function updateFulfillmentAction(itemId: string, data: { trackingNu
     headers: await headers()
   });
 
-  if (!session || (session.user.role !== "supplier" && session.user.role !== "admin")) {
+  if (!session || (session.user.role !== "business" && session.user.role !== "admin")) {
     return { success: false, error: "Unauthorized" };
   }
 
   try {
-    // In a real multi-tenant app, we'd also verify the supplier owns the product for this item
+    // In a real multi-tenant app, we'd also verify the business owns the product for this item
     // For now, we perform the update directly
     await db.update(orderItems)
       .set({ 
@@ -26,7 +26,7 @@ export async function updateFulfillmentAction(itemId: string, data: { trackingNu
       })
       .where(eq(orderItems.id, itemId));
     
-    revalidatePath("/dashboard/supplier");
+    revalidatePath("/dashboard/business");
     return { success: true };
   } catch (error: any) {
     return { success: false, error: error.message };

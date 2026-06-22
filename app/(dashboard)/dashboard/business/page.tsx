@@ -7,21 +7,21 @@ import { eq, and, ne } from "drizzle-orm";
 import { DataTable } from "@/components/ui/data-table";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { FulfillmentButton } from "@/components/dashboard/supplier/fulfillment-button";
+import { FulfillmentButton } from "@/components/dashboard/business/fulfillment-button";
 
-export default async function SupplierDashboard() {
+export default async function BusinessDashboard() {
   const session = await auth.api.getSession({
     headers: await headers()
   });
 
-  // Access control: Suppliers and Admins only
-  if (!session || (session.user.role !== "supplier" && session.user.role !== "admin")) {
+  // Access control: Businesses and Admins only
+  if (!session || (session.user.role !== "business" && session.user.role !== "admin")) {
     return redirect("/dashboard");
   }
 
   const supplierId = session.user.id;
 
-  // Fetch pending items assigned to this supplier
+  // Fetch pending items assigned to this supplier/business
   // We filter items where the parent product belongs to this supplier
   // and fulfillment is not yet 'delivered'
   const items = await db.query.orderItems.findMany({

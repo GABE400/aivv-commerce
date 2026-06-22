@@ -33,11 +33,11 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Orders", href: "/dashboard/admin/orders", icon: ShoppingCart },
     { name: "Users", href: "/dashboard/admin/users", icon: Users },
     { name: "User Dashboard", href: "/dashboard/customer", icon: ShoppingBag },
-    { name: "Operations Console", href: "/dashboard/supplier", icon: Box },
+    { name: "Business Console", href: "/dashboard/business", icon: Box },
   ];
 
-  const supplierLinks = [
-    { name: "Overview", href: "/dashboard/supplier", icon: LayoutDashboard },
+  const businessLinks = [
+    { name: "Overview", href: "/dashboard/business", icon: LayoutDashboard },
     { name: "AI Automation Workspace", href: "/dashboard/customer/automate", icon: Sparkles },
     { name: "Billing", href: "/dashboard/user/billing", icon: CreditCard },
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
@@ -54,7 +54,7 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
   ];
 
-  const links = role === "admin" ? adminLinks : role === "supplier" ? supplierLinks : customerLinks;
+  const links = role === "admin" ? adminLinks : role === "business" ? businessLinks : customerLinks;
 
   const handleLogout = async () => {
     await authClient.signOut();

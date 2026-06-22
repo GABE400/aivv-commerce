@@ -5,6 +5,8 @@ import { Loader2, Key, Zap, List } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { db } from "@/lib/db";
+import { workflowTemplates } from "@/lib/db/schema";
 
 export default async function AutomatePage() {
   const subscription = await getUserSubscription();
@@ -14,6 +16,7 @@ export default async function AutomatePage() {
   }
 
   const workflows = await getUserWorkflows();
+  const templates = await db.select().from(workflowTemplates);
 
   const hasWorkflow = (slug: string) => {
     return workflows.some(w => w.template?.slug === slug && w.status === "active");
@@ -77,51 +80,23 @@ export default async function AutomatePage() {
           Active Workflows
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link href="/dashboard/customer/automate/document-summarizer">
-             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="text-lg">Meeting & Document Summarizer</CardTitle>
-                  <CardDescription>Summarize meeting transcripts, notes, and general texts.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {hasWorkflow("document-summarizer") ? (
-                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
-                  )}
-                </CardContent>
-              </Card>
-          </Link>
-          <Link href="/dashboard/customer/automate/email-responder">
-             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer">
-                <CardHeader>
-                  <CardTitle className="text-lg">General Email Responder</CardTitle>
-                  <CardDescription>Draft replies to client inquiries, feedback, or follow-ups.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {hasWorkflow("email-responder") ? (
-                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
-                  )}
-                </CardContent>
-              </Card>
-          </Link>
-          <Link href="/dashboard/customer/automate/invoice-assistant">
-             <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer col-span-1 md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="text-lg">Invoice & Billing Assistant</CardTitle>
-                  <CardDescription>Extract details from invoices or generate payment reminders.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {hasWorkflow("invoice-assistant") ? (
-                    <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
-                  ) : (
-                    <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
-                  )}
-                </CardContent>
-              </Card>
-          </Link>
+          {templates.map((t) => (
+            <Link key={t.id} href={`/dashboard/customer/automate/${t.slug}`}>
+               <Card className="glass border-glass-border hover:border-accent transition-colors cursor-pointer flex flex-col h-full justify-between">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{t.name}</CardTitle>
+                    <CardDescription>{t.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    {hasWorkflow(t.slug) ? (
+                      <Badge className="bg-green-500/10 text-green-500 border-green-500/20">Configured</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-muted-foreground">Not Configured</Badge>
+                    )}
+                  </CardContent>
+                </Card>
+            </Link>
+          ))}
         </div>
       </div>
     </div>

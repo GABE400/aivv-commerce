@@ -72,13 +72,13 @@ async function seed() {
     assetUrl: "/assets/geometric-pack.zip", // Linked to ImageKit path
   });
 
-  // 5. Create Supplier Mock User
+  // 5. Create Business Mock User
   await db.insert(users).values({
     id: "supplier-mock-1",
     name: "Printify Inc.",
     email: "fulfillment@printify.com",
     emailVerified: true,
-    role: "supplier",
+    role: "business",
     createdAt: new Date(),
     updatedAt: new Date(),
   });

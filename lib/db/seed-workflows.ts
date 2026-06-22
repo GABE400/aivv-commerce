@@ -63,6 +63,63 @@ async function main() {
         }
       }),
     },
+    {
+      slug: "lead-outreach",
+      name: "Cold Sales Outreach & Copywriter",
+      description: "Generate high-converting cold sales email sequences, LinkedIn outreach templates, and elevator pitches to win new clients.",
+      category: "sales",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
+      promptTemplate: "Draft a sales pitch for channel {{pitchChannel}} targeting {{targetAudience}} based on the value proposition: {{valueProposition}}.",
+      inputSchema: JSON.stringify({
+        valueProposition: { type: "longtext", label: "Value Proposition / Core Product Description", placeholder: "Describe what you sell, your key benefits, and case studies..." },
+        targetAudience: { type: "text", label: "Target Prospect (e.g. SaaS Founders, CMOs, local shops)", placeholder: "e.g. CMOs of mid-sized e-commerce brands" },
+        pitchChannel: { type: "text", label: "Preferred Channel (e.g. Cold Email, LinkedIn, Elevator Pitch)", placeholder: "e.g. Cold Email Sequence" }
+      }),
+      outputSchema: JSON.stringify({
+        subject: "Clear subject line or Hook Angle",
+        body: "The complete outreach pitch body, professionally written",
+        result: "Comprehensive pitch sequence including email/LinkedIn copy, hook variations, and a 1-day follow-up script."
+      }),
+    },
+    {
+      slug: "sales-proposal",
+      name: "AI Proposal & Scope of Work Writer",
+      description: "Generate detailed business proposals, estimations, and structured scopes of work (SOW) from client briefs.",
+      category: "sales",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
+      promptTemplate: "Draft a professional business proposal for the following brief: {{clientBrief}} offering services: {{servicesOffered}} with pricing model: {{pricingDetails}}.",
+      inputSchema: JSON.stringify({
+        clientBrief: { type: "longtext", label: "Client Brief or Meeting Transcript", placeholder: "Paste client specifications, transcript, notes, or project brief here..." },
+        servicesOffered: { type: "longtext", label: "Services & Deliverables Provided", placeholder: "e.g. 5 SEO blog posts, 1 SEO landing page, 3 hours setup" },
+        pricingDetails: { type: "text", label: "Pricing Structure (e.g. $5,000 flat, hourly, weekly retainer)", placeholder: "e.g. $4,500 flat fee (50% upfront, 50% on completion)" }
+      }),
+      outputSchema: JSON.stringify({
+        result: "The full formal proposal and Scope of Work (SOW) text",
+        extractedData: {
+          clientName: "Identified client or company name",
+          servicesCount: "Approximate number of key services/deliverables identified",
+          estimatedCost: "Extracted estimated cost or pricing structure string"
+        }
+      }),
+    },
+    {
+      slug: "seo-campaign",
+      name: "SEO Campaign & Blog Strategy Planner",
+      description: "Generate keyword maps, content calendars, and article outlining strategies to drive high-intent organic traffic.",
+      category: "marketing",
+      defaultModel: "llama-3.3-70b-versatile",
+      defaultProvider: "groq",
+      promptTemplate: "Plan an SEO campaign for topic: {{topicDescription}} with primary target keywords: {{primaryKeywords}}.",
+      inputSchema: JSON.stringify({
+        topicDescription: { type: "longtext", label: "Topic / Core Product & Service Description", placeholder: "What is the business, or what topic are you targeting?" },
+        primaryKeywords: { type: "text", label: "Primary Keywords (comma separated)", placeholder: "e.g. ai coding assistant, dev tools, developer productivity" }
+      }),
+      outputSchema: JSON.stringify({
+        result: "The comprehensive SEO marketing strategy, content calendar, blog post outline, and titles."
+      }),
+    },
   ];
 
   for (const t of templates) {

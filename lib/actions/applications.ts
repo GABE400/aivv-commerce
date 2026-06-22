@@ -67,7 +67,7 @@ export async function reviewApplicationAction(applicationId: string, status: "ap
       // 2. If approved, update User Role
       if (status === "approved") {
         await tx.update(users)
-          .set({ role: "supplier" })
+          .set({ role: "business" })
           .where(eq(users.id, app.userId));
       }
     });

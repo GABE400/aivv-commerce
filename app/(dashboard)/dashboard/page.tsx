@@ -17,8 +17,8 @@ export default async function DashboardEntryPage() {
     return redirect("/dashboard/admin");
   }
 
-  if (role === "supplier") {
-    return redirect("/dashboard/supplier");
+  if (role === "business") {
+    return redirect("/dashboard/business");
   }
 
   if (role === "customer" && !session.user.tosAccepted) {

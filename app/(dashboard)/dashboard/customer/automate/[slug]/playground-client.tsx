@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Play, Sparkles, Clipboard, Check, FileText, Mail, FileCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Loader2, Play, Sparkles, Clipboard, Check, FileText, Mail, FileCheck, Download, Paperclip } from "lucide-react";
+import { FileUploader } from "@/components/admin/file-uploader";
 
 interface PlaygroundClientProps {
   userWorkflowId: string;
@@ -20,12 +20,36 @@ interface InputField {
   placeholder?: string;
 }
 
+// Helper to strip markdown formatting characters (*, #, _, `, etc.)
+function stripMarkdown(md: string): string {
+  if (!md) return "";
+  return md
+    // Strip bold/italic markers
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    // Strip headers
+    .replace(/^\s*#+\s+(.*)$/gm, "$1")
+    // Strip lists markers but keep spacing
+    .replace(/^\s*[-*+]\s+/gm, "• ")
+    .replace(/^\s*\d+\.\s+/gm, (match) => match.trim() + " ")
+    // Strip blockquotes
+    .replace(/^\s*>\s+/gm, "")
+    // Strip backticks/code blocks
+    .replace(/```[a-z]*\n([\s\S]*?)\n```/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
 export function WorkflowPlayground({
   userWorkflowId,
   inputSchemaStr,
   outputSchemaStr,
 }: PlaygroundClientProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({});
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileName, setFileName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [copied, setCopied] = useState(false);
@@ -55,7 +79,11 @@ export function WorkflowPlayground({
         },
         body: JSON.stringify({
           userWorkflowId,
-          input: inputs,
+          input: {
+            ...inputs,
+            fileUrl,
+            fileName,
+          },
         }),
       });
 
@@ -85,6 +113,38 @@ export function WorkflowPlayground({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const downloadResponse = () => {
+    if (!result) return;
+    let textToDownload = "";
+
+    if (result.summary) {
+      textToDownload += `SUMMARY:\n${stripMarkdown(result.summary)}\n\n`;
+      if (result.keyTakeaways && result.keyTakeaways.length > 0) {
+        textToDownload += `KEY TAKEAWAYS:\n${result.keyTakeaways.map((k: string) => `• ${stripMarkdown(k)}`).join("\n")}\n\n`;
+      }
+      if (result.actionItems && result.actionItems.length > 0) {
+        textToDownload += `ACTION ITEMS:\n${result.actionItems.map((a: string) => `[ ] ${stripMarkdown(a)}`).join("\n")}\n`;
+      }
+    } else if (result.subject && result.body) {
+      textToDownload += `SUBJECT: ${stripMarkdown(result.subject)}\n\n${stripMarkdown(result.body)}`;
+    } else if (result.result) {
+      textToDownload += stripMarkdown(result.result);
+    } else {
+      textToDownload += JSON.stringify(result, null, 2);
+    }
+
+    const blob = new Blob([textToDownload], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aivv-ai-response-${new Date().toISOString().slice(0,10)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("AI Response downloaded to your computer!");
+  };
+
   const renderResultData = () => {
     if (!result) return null;
 
@@ -100,18 +160,31 @@ export function WorkflowPlayground({
             <Sparkles className="size-4 text-accent animate-pulse" />
             AI Execution Result
           </h3>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="text-xs text-muted-foreground hover:text-white"
-            onClick={() => handleCopy(JSON.stringify(result, null, 2))}
-          >
-            {copied ? <Check className="size-3.5 mr-1" /> : <Clipboard className="size-3.5 mr-1" />}
-            Copy JSON
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              type="button"
+              variant="outline"
+              className="text-xs text-muted-foreground hover:text-white border-glass-border hover:bg-white/5 h-8 flex items-center gap-1 cursor-pointer"
+              onClick={downloadResponse}
+            >
+              <Download className="size-3.5" />
+              Download Response
+            </Button>
+            <Button
+              size="sm"
+              type="button"
+              variant="ghost"
+              className="text-xs text-muted-foreground hover:text-white h-8"
+              onClick={() => handleCopy(JSON.stringify(result, null, 2))}
+            >
+              {copied ? <Check className="size-3.5 mr-1" /> : <Clipboard className="size-3.5 mr-1" />}
+              Copy JSON
+            </Button>
+          </div>
         </div>
 
-        {/* Dynamic Display Formatting */}
+        {/* Dynamic Display Formatting (with stripped raw markdown markers for professional view) */}
         {hasSummary && (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-accent/5 border border-accent/20 space-y-2">
@@ -119,7 +192,7 @@ export function WorkflowPlayground({
                 <FileText className="size-3.5" />
                 Executive Summary
               </div>
-              <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{result.summary}</p>
+              <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{stripMarkdown(result.summary)}</p>
             </div>
 
             {result.keyTakeaways && result.keyTakeaways.length > 0 && (
@@ -129,7 +202,7 @@ export function WorkflowPlayground({
                   {result.keyTakeaways.map((item: string, idx: number) => (
                     <li key={idx} className="text-xs text-muted-foreground flex items-start gap-2">
                       <span className="text-accent mt-0.5">•</span>
-                      <span>{item}</span>
+                      <span>{stripMarkdown(item)}</span>
                     </li>
                   ))}
                 </ul>
@@ -143,7 +216,7 @@ export function WorkflowPlayground({
                   {result.actionItems.map((item: string, idx: number) => (
                     <li key={idx} className="flex items-start gap-2 p-2 rounded-lg bg-white/5 border border-white/10">
                       <input type="checkbox" className="mt-0.5 rounded border-glass-border bg-transparent text-accent focus:ring-0 cursor-pointer" />
-                      <span className="text-xs text-gray-300">{item}</span>
+                      <span className="text-xs text-gray-300">{stripMarkdown(item)}</span>
                     </li>
                   ))}
                 </ul>
@@ -158,18 +231,12 @@ export function WorkflowPlayground({
               <div className="bg-[#1E2440] px-4 py-3 border-b border-glass-border flex items-center gap-2 text-xs">
                 <Mail className="size-3.5 text-accent" />
                 <span className="text-muted-foreground">Subject:</span>
-                <span className="font-semibold text-white">{result.subject}</span>
+                <span className="font-semibold text-white">{stripMarkdown(result.subject)}</span>
               </div>
               <div className="p-5 bg-black/20 text-sm text-gray-200 leading-relaxed font-sans whitespace-pre-wrap">
-                {result.body}
+                {stripMarkdown(result.body)}
               </div>
             </div>
-            <Button
-              onClick={() => handleCopy(result.body)}
-              className="w-full h-11 bg-accent hover:bg-accent/90 text-white rounded-xl font-medium"
-            >
-              Copy Email Body
-            </Button>
           </div>
         )}
 
@@ -180,7 +247,7 @@ export function WorkflowPlayground({
                 <FileCheck className="size-3.5" />
                 Operations Task Output
               </div>
-              <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{result.result}</p>
+              <p className="text-sm text-gray-200 leading-relaxed whitespace-pre-wrap">{stripMarkdown(result.result)}</p>
             </div>
 
             {result.extractedData && Object.keys(result.extractedData).length > 0 && (
@@ -190,7 +257,7 @@ export function WorkflowPlayground({
                   {Object.entries(result.extractedData).map(([key, val]: [string, any]) => (
                     <div key={key} className="p-3 rounded-lg bg-black/10 border border-white/5">
                       <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{key.replace(/([A-Z])/g, " $1")}</div>
-                      <div className="text-sm font-semibold text-white mt-1">{val !== null ? String(val) : <span className="text-muted-foreground font-normal italic">N/A</span>}</div>
+                      <div className="text-sm font-semibold text-white mt-1">{val !== null ? stripMarkdown(String(val)) : <span className="text-muted-foreground font-normal italic">N/A</span>}</div>
                     </div>
                   ))}
                 </div>
@@ -212,6 +279,46 @@ export function WorkflowPlayground({
   return (
     <div className="space-y-6">
       <form onSubmit={handleRun} className="space-y-4">
+        {/* Document Uploader via ImageKit */}
+        <div className="space-y-2 p-4 rounded-xl border border-glass-border bg-[#1A1F35]/40">
+          <Label className="text-xs font-semibold text-gray-300 flex items-center gap-1">
+            <Paperclip className="size-3.5 text-accent" />
+            Attach Document (PDF, CSV, XML, TXT, DOCX, Invoices, transcripts, meeting notes)
+          </Label>
+          {fileUrl ? (
+            <div className="flex items-center justify-between p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+              <span className="text-xs font-semibold truncate max-w-[250px]">{fileName}</span>
+              <Button
+                size="sm"
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  setFileUrl("");
+                  setFileName("");
+                }}
+                className="text-xs text-emerald-500 hover:text-emerald-400 hover:bg-transparent cursor-pointer"
+              >
+                Remove
+              </Button>
+            </div>
+          ) : (
+            <FileUploader
+              onUploadSuccess={(url) => {
+                setFileUrl(url);
+                const name = url.split("/").pop() || "Uploaded Document";
+                setFileName(name);
+              }}
+              onUploadError={(err) => {
+                console.error(err);
+              }}
+              folder="/business-docs"
+              accept=".pdf,.xml,.csv,.txt,.json,.docx,.doc"
+              label="Upload PDF, CSV, XML, TXT, or Word Document"
+              isImage={false}
+            />
+          )}
+        </div>
+
         {Object.entries(inputSchema).map(([key, field]) => {
           const isTextArea = field.type === "longtext";
           return (
@@ -222,8 +329,8 @@ export function WorkflowPlayground({
               {isTextArea ? (
                 <textarea
                   id={key}
-                  required
-                  placeholder={field.placeholder}
+                  required={!fileUrl} // If file is uploaded, text fields are optional!
+                  placeholder={fileUrl ? `${field.placeholder} (Optional, file contents will be used)` : field.placeholder}
                   value={inputs[key] || ""}
                   onChange={(e) => handleInputChange(key, e.target.value)}
                   className="w-full min-h-[140px] rounded-xl glass border border-glass-border bg-transparent p-4 text-sm text-white focus:border-accent outline-none placeholder:text-muted-foreground/60 leading-relaxed"
@@ -231,7 +338,7 @@ export function WorkflowPlayground({
               ) : (
                 <Input
                   id={key}
-                  required
+                  required={!fileUrl && key !== "targetLength" && key !== "tone" && key !== "task"} // target options can be optional
                   placeholder={field.placeholder}
                   value={inputs[key] || ""}
                   onChange={(e) => handleInputChange(key, e.target.value)}
@@ -244,7 +351,7 @@ export function WorkflowPlayground({
 
         <Button
           type="submit"
-          disabled={isLoading || Object.keys(inputSchema).length === 0}
+          disabled={isLoading}
           className="w-full h-12 rounded-xl accent-gradient text-white font-semibold cursor-pointer shadow-lg shadow-accent/15"
         >
           {isLoading ? (

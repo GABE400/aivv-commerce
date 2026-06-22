@@ -27,7 +27,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   }
 
   const allCategories = await db.select().from(categories);
-  const allSuppliers = await db.select().from(users).where(eq(users.role, "supplier"));
+  const allSuppliers = await db.select().from(users).where(eq(users.role, "business"));
 
   return (
     <div className="max-w-5xl mx-auto space-y-8">

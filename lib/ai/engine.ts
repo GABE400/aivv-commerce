@@ -6,6 +6,9 @@ import { getProvider } from "./providers";
 import { buildDocumentSummarizerPrompt } from "./templates/document-summarizer";
 import { buildEmailResponderPrompt } from "./templates/email-responder";
 import { buildInvoiceAssistantPrompt } from "./templates/invoice-assistant";
+import { buildLeadOutreachPrompt } from "./templates/lead-outreach";
+import { buildSalesProposalPrompt } from "./templates/sales-proposal";
+import { buildSeoCampaignPrompt } from "./templates/seo-campaign";
 
 export async function executeWorkflow(params: {
   userId: string;
@@ -54,6 +57,30 @@ export async function executeWorkflow(params: {
     throw new Error(`API Key for provider ${uw.provider} not found. Please connect your API key in settings.`);
   }
 
+  // If a file is attached, fetch and parse it to override or supplement the text input
+  if (input.fileUrl) {
+    try {
+      const { loadDocumentContent } = await import("./document-loader");
+      const extractedText = await loadDocumentContent(input.fileUrl, input.fileName || "uploaded_file");
+      
+      if (template.slug === "document-summarizer") {
+        input.documentText = (input.documentText || "") + "\n\n[Attached Document Content:]\n" + extractedText;
+      } else if (template.slug === "email-responder") {
+        input.customerEmail = (input.customerEmail || "") + "\n\n[Attached Email Document:]\n" + extractedText;
+      } else if (template.slug === "invoice-assistant") {
+        input.invoiceData = (input.invoiceData || "") + "\n\n[Attached Invoice Data:]\n" + extractedText;
+      } else if (template.slug === "lead-outreach") {
+        input.valueProposition = (input.valueProposition || "") + "\n\n[Attached Company Brief:]\n" + extractedText;
+      } else if (template.slug === "sales-proposal") {
+        input.clientBrief = (input.clientBrief || "") + "\n\n[Attached Meeting Notes/Brief:]\n" + extractedText;
+      } else if (template.slug === "seo-campaign") {
+        input.topicDescription = (input.topicDescription || "") + "\n\n[Attached Topic Brief:]\n" + extractedText;
+      }
+    } catch (e: any) {
+      console.error("Failed to extract content from attached file:", e);
+    }
+  }
+
   // 3. Build Prompt
   let prompt = "";
   if (template.slug === "document-summarizer") {
@@ -62,6 +89,12 @@ export async function executeWorkflow(params: {
     prompt = buildEmailResponderPrompt(input.customerEmail || "", input.tone || "");
   } else if (template.slug === "invoice-assistant") {
     prompt = buildInvoiceAssistantPrompt(input.invoiceData || "", input.task || "");
+  } else if (template.slug === "lead-outreach") {
+    prompt = buildLeadOutreachPrompt(input.valueProposition || "", input.targetAudience || "", input.pitchChannel || "");
+  } else if (template.slug === "sales-proposal") {
+    prompt = buildSalesProposalPrompt(input.clientBrief || "", input.servicesOffered || "", input.pricingDetails || "");
+  } else if (template.slug === "seo-campaign") {
+    prompt = buildSeoCampaignPrompt(input.topicDescription || "", input.primaryKeywords || "");
   } else {
     throw new Error(`Unknown workflow template slug: ${template.slug}`);
   }

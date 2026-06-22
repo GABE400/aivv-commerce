@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
-  Play, 
   CheckCircle2, 
   XCircle, 
   Clock, 
@@ -13,7 +12,9 @@ import {
   ExternalLink, 
   Copy, 
   X,
-  FileJson
+  FileJson,
+  Download,
+  Paperclip
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -35,12 +36,74 @@ interface HistoryClientProps {
   initialExecutions: ExecutionLog[];
 }
 
+// Helper to strip markdown formatting characters (*, #, _, `, etc.)
+function stripMarkdown(md: string): string {
+  if (!md) return "";
+  return md
+    // Strip bold/italic markers
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/\*([^*]+)\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    .replace(/_([^_]+)_/g, "$1")
+    // Strip headers
+    .replace(/^\s*#+\s+(.*)$/gm, "$1")
+    // Strip lists markers but keep spacing
+    .replace(/^\s*[-*+]\s+/gm, "• ")
+    .replace(/^\s*\d+\.\s+/gm, (match) => match.trim() + " ")
+    // Strip blockquotes
+    .replace(/^\s*>\s+/gm, "")
+    // Strip backticks/code blocks
+    .replace(/```[a-z]*\n([\s\S]*?)\n```/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .trim();
+}
+
 export default function HistoryClient({ initialExecutions }: HistoryClientProps) {
   const [selected, setSelected] = useState<ExecutionLog | null>(null);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     toast.success("Output copied to clipboard!");
+  };
+
+  const downloadResponse = (log: ExecutionLog) => {
+    if (!log.output) return;
+    let textToDownload = "";
+
+    try {
+      const parsed = JSON.parse(log.output);
+      
+      if (parsed.summary) {
+        textToDownload += `SUMMARY:\n${stripMarkdown(parsed.summary)}\n\n`;
+        if (parsed.keyTakeaways && parsed.keyTakeaways.length > 0) {
+          textToDownload += `KEY TAKEAWAYS:\n${parsed.keyTakeaways.map((k: string) => `• ${stripMarkdown(k)}`).join("\n")}\n\n`;
+        }
+        if (parsed.actionItems && parsed.actionItems.length > 0) {
+          textToDownload += `ACTION ITEMS:\n${parsed.actionItems.map((a: string) => `[ ] ${stripMarkdown(a)}`).join("\n")}\n`;
+        }
+      } else if (parsed.subject && parsed.body) {
+        textToDownload += `SUBJECT: ${stripMarkdown(parsed.subject)}\n\n${stripMarkdown(parsed.body)}`;
+      } else if (parsed.result) {
+        textToDownload += stripMarkdown(parsed.result);
+      } else if (parsed.raw) {
+        textToDownload += stripMarkdown(parsed.raw);
+      } else {
+        textToDownload += JSON.stringify(parsed, null, 2);
+      }
+    } catch {
+      textToDownload += stripMarkdown(log.output);
+    }
+
+    const blob = new Blob([textToDownload], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `aivv-log-response-${log.id.substring(0, 8)}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("AI Response downloaded to your computer!");
   };
 
   const formatDuration = (ms: number | null) => {
@@ -110,30 +173,43 @@ export default function HistoryClient({ initialExecutions }: HistoryClientProps)
                 </tr>
               </thead>
               <tbody className="divide-y divide-glass-border text-sm">
-                {initialExecutions.map((log) => (
-                  <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="p-4 pl-6 font-semibold text-white">
-                      {log.workflowName || "Unknown Workflow"}
-                    </td>
-                    <td className="p-4 font-mono text-xs text-muted-foreground max-w-[200px] truncate">
-                      {log.model || "None"}
-                    </td>
-                    <td className="p-4">{getStatusBadge(log.status)}</td>
-                    <td className="p-4 text-muted-foreground">{formatDuration(log.durationMs)}</td>
-                    <td className="p-4 text-muted-foreground">{log.tokensUsed ?? "-"}</td>
-                    <td className="p-4 text-xs text-muted-foreground">{formatDate(log.createdAt)}</td>
-                    <td className="p-4 pr-6 text-right">
-                      <Button
-                        onClick={() => setSelected(log)}
-                        size="sm"
-                        variant="secondary"
-                        className="bg-muted/10 hover:bg-muted/20 border border-glass-border text-white text-xs h-8 px-3 rounded-lg"
-                      >
-                        Inspect
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {initialExecutions.map((log) => {
+                  let hasAttachment = false;
+                  try {
+                    const parsedInput = log.input ? JSON.parse(log.input) : {};
+                    hasAttachment = !!parsedInput.fileUrl;
+                  } catch {}
+
+                  return (
+                    <tr key={log.id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="p-4 pl-6 font-semibold text-white flex items-center gap-2">
+                        {log.workflowName || "Unknown Workflow"}
+                        {hasAttachment && (
+                          <span title="Has attached document">
+                            <Paperclip className="size-3.5 text-accent" />
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-4 font-mono text-xs text-muted-foreground max-w-[200px] truncate">
+                        {log.model || "None"}
+                      </td>
+                      <td className="p-4">{getStatusBadge(log.status)}</td>
+                      <td className="p-4 text-muted-foreground">{formatDuration(log.durationMs)}</td>
+                      <td className="p-4 text-muted-foreground">{log.tokensUsed ?? "-"}</td>
+                      <td className="p-4 text-xs text-muted-foreground">{formatDate(log.createdAt)}</td>
+                      <td className="p-4 pr-6 text-right">
+                        <Button
+                          onClick={() => setSelected(log)}
+                          size="sm"
+                          variant="secondary"
+                          className="bg-muted/10 hover:bg-muted/20 border border-glass-border text-white text-xs h-8 px-3 rounded-lg cursor-pointer"
+                        >
+                          Inspect
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -198,6 +274,38 @@ export default function HistoryClient({ initialExecutions }: HistoryClientProps)
                 </div>
               </div>
 
+              {/* Attached Document Section */}
+              {(() => {
+                try {
+                  const parsedInput = selected.input ? JSON.parse(selected.input) : {};
+                  if (parsedInput.fileUrl) {
+                    return (
+                      <div className="space-y-2">
+                        <div className="text-xs font-bold text-white uppercase tracking-wider">Attached Document</div>
+                        <div className="flex items-center justify-between p-3 rounded-xl border border-glass-border bg-white/5">
+                          <div className="flex items-center gap-2 text-sm text-gray-200 truncate">
+                            <Paperclip className="size-4 text-accent" />
+                            <span className="truncate max-w-[300px]">{parsedInput.fileName || "Uploaded File"}</span>
+                          </div>
+                          <a
+                            href={parsedInput.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-bold px-3 py-1.5 rounded-lg bg-accent/10 border border-accent/20 cursor-pointer"
+                          >
+                            <ExternalLink className="size-3" />
+                            Open Document
+                          </a>
+                        </div>
+                      </div>
+                    );
+                  }
+                } catch {
+                  return null;
+                }
+                return null;
+              })()}
+
               {/* Input Parameters */}
               <div className="space-y-2">
                 <div className="text-xs font-bold text-white uppercase tracking-wider">Input Parameters</div>
@@ -206,24 +314,41 @@ export default function HistoryClient({ initialExecutions }: HistoryClientProps)
                 </pre>
               </div>
 
-              {/* Generated Output */}
+              {/* Generated Response */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <div className="text-xs font-bold text-white uppercase tracking-wider">Generated Response</div>
                   {selected.output && (
-                    <Button
-                      onClick={() => copyToClipboard(
-                        typeof JSON.parse(selected.output!).raw === "string" 
-                          ? JSON.parse(selected.output!).raw 
-                          : JSON.stringify(JSON.parse(selected.output!), null, 2)
-                      )}
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7 px-2 hover:bg-white/5 flex items-center gap-1"
-                    >
-                      <Copy className="size-3" />
-                      Copy Output
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => downloadResponse(selected)}
+                        variant="outline"
+                        size="sm"
+                        className="text-xs h-7 px-2 hover:bg-white/5 flex items-center gap-1 border-glass-border cursor-pointer text-muted-foreground hover:text-white"
+                      >
+                        <Download className="size-3" />
+                        Download Response
+                      </Button>
+                      <Button
+                        onClick={() => copyToClipboard(
+                          (() => {
+                            try {
+                              const parsed = JSON.parse(selected.output!);
+                              if (parsed.raw) return parsed.raw;
+                              return JSON.stringify(parsed, null, 2);
+                            } catch {
+                              return selected.output!;
+                            }
+                          })()
+                        )}
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs h-7 px-2 hover:bg-white/5 flex items-center gap-1"
+                      >
+                        <Copy className="size-3" />
+                        Copy Output
+                      </Button>
+                    </div>
                   )}
                 </div>
                 <div className="p-4 rounded-xl border border-glass-border bg-black/30 font-mono text-xs overflow-x-auto text-white min-h-[100px] whitespace-pre-wrap">
@@ -231,10 +356,47 @@ export default function HistoryClient({ initialExecutions }: HistoryClientProps)
                     (() => {
                       try {
                         const parsed = JSON.parse(selected.output);
-                        if (parsed.raw) return parsed.raw;
+                        
+                        // Render formatted with stripped markdown to be highly professional without raw # ** markers
+                        if (parsed.summary) {
+                          return (
+                            <div className="space-y-3 font-sans text-sm text-gray-300">
+                              <div className="p-3 rounded-lg bg-accent/5 border border-accent/10 text-white whitespace-pre-wrap">{stripMarkdown(parsed.summary)}</div>
+                              {parsed.keyTakeaways && parsed.keyTakeaways.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="text-xs font-bold text-white uppercase">Key Takeaways</div>
+                                  <ul className="space-y-1">
+                                    {parsed.keyTakeaways.map((k: string, i: number) => <li key={i} className="text-xs text-muted-foreground">• {stripMarkdown(k)}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                              {parsed.actionItems && parsed.actionItems.length > 0 && (
+                                <div className="space-y-1">
+                                  <div className="text-xs font-bold text-white uppercase">Action Items</div>
+                                  <ul className="space-y-1">
+                                    {parsed.actionItems.map((a: string, i: number) => <li key={i} className="text-xs text-gray-300">[ ] {stripMarkdown(a)}</li>)}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
+                        if (parsed.subject && parsed.body) {
+                          return (
+                            <div className="space-y-2 font-sans text-sm text-gray-300">
+                              <div className="font-bold text-white">Subject: {stripMarkdown(parsed.subject)}</div>
+                              <div className="p-3 rounded-lg bg-white/5 border border-glass-border whitespace-pre-wrap">{stripMarkdown(parsed.body)}</div>
+                            </div>
+                          );
+                        }
+                        if (parsed.result) {
+                          return <div className="font-sans text-sm text-gray-300 whitespace-pre-wrap">{stripMarkdown(parsed.result)}</div>;
+                        }
+
+                        if (parsed.raw) return stripMarkdown(parsed.raw);
                         return JSON.stringify(parsed, null, 2);
                       } catch {
-                        return selected.output;
+                        return stripMarkdown(selected.output);
                       }
                     })()
                   ) : (
@@ -250,7 +412,7 @@ export default function HistoryClient({ initialExecutions }: HistoryClientProps)
                 onClick={() => setSelected(null)}
                 variant="secondary"
                 size="sm"
-                className="bg-muted/10 hover:bg-white/5 text-white"
+                className="bg-muted/10 hover:bg-white/5 text-white cursor-pointer"
               >
                 Close
               </Button>

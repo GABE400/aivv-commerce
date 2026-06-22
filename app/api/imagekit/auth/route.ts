@@ -12,8 +12,8 @@ export async function GET() {
     headers: await headers()
   });
 
-  // Only allow authenticated users to upload (Admin or Supplier)
-  if (!session || (session.user.role !== "admin" && session.user.role !== "supplier")) {
+  // Allow authenticated users to upload (Admin, Business, Customer)
+  if (!session || (session.user.role !== "admin" && session.user.role !== "business" && session.user.role !== "customer")) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
