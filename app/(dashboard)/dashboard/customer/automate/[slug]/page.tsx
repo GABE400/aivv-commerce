@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { WorkflowPlayground } from "./playground-client";
 import { ModelSelector } from "@/components/dashboard/automate/model-selector";
+import { CustomPromptEditor } from "@/components/dashboard/automate/custom-prompt-editor";
 
 export default async function WorkflowExecutionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -97,19 +98,16 @@ export default async function WorkflowExecutionPage({ params }: { params: Promis
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">Provider</div>
-                <div className="text-sm font-medium capitalize text-white">{uw?.provider || "None"}</div>
-              </div>
-              <div>
-                <div className="text-xs text-muted-foreground mb-1.5">Model</div>
-                <ModelSelector
-                  templateId={template.id}
-                  currentProvider={uw.provider}
-                  currentModel={uw.model}
-                  customPrompt={uw.customPrompt}
-                />
-              </div>
+              <ModelSelector
+                templateId={template.id}
+                currentProvider={uw.provider}
+                currentModel={uw.model}
+                customPrompt={uw.customPrompt}
+              />
+              <CustomPromptEditor
+                workflowId={uw.id}
+                initialCustomPrompt={uw.customPrompt}
+              />
             </CardContent>
           </Card>
         </div>

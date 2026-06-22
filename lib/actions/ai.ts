@@ -152,3 +152,37 @@ export async function getWorkflowHistory(userWorkflowId: string) {
 
   return results;
 }
+
+export async function updateWorkflowCustomPrompt(workflowId: string, customPrompt: string | null) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw new Error("Unauthorized");
+
+  await db.update(userWorkflows)
+    .set({ customPrompt })
+    .where(and(eq(userWorkflows.id, workflowId), eq(userWorkflows.userId, session.user.id)));
+
+  revalidatePath("/dashboard/customer/automate");
+  return { success: true };
+}
+
+export async function deleteWorkflowExecution(executionId: string) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw new Error("Unauthorized");
+
+  await db.delete(workflowExecutions)
+    .where(and(eq(workflowExecutions.id, executionId), eq(workflowExecutions.userId, session.user.id)));
+
+  revalidatePath("/dashboard/customer/automate/history");
+  return { success: true };
+}
+
+export async function clearWorkflowHistory() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw new Error("Unauthorized");
+
+  await db.delete(workflowExecutions)
+    .where(eq(workflowExecutions.userId, session.user.id));
+
+  revalidatePath("/dashboard/customer/automate/history");
+  return { success: true };
+}

@@ -9,6 +9,8 @@ import { buildInvoiceAssistantPrompt } from "./templates/invoice-assistant";
 import { buildLeadOutreachPrompt } from "./templates/lead-outreach";
 import { buildSalesProposalPrompt } from "./templates/sales-proposal";
 import { buildSeoCampaignPrompt } from "./templates/seo-campaign";
+import { robustParseJSON } from "./utils";
+
 
 export async function executeWorkflow(params: {
   userId: string;
@@ -125,11 +127,10 @@ export async function executeWorkflow(params: {
 
     const durationMs = Date.now() - startTime;
 
-    // 6. Attempt to parse JSON response
+    // 6. Attempt to parse JSON response robustly
     let outputData;
     try {
-      const cleanedText = aiResponse.text.replace(/```json/g, "").replace(/```/g, "").trim();
-      outputData = JSON.parse(cleanedText);
+      outputData = robustParseJSON(aiResponse.text);
     } catch {
       // Fallback to raw text if not strictly JSON
       outputData = { raw: aiResponse.text };
