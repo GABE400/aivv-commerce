@@ -10,6 +10,7 @@ import { buildLeadOutreachPrompt } from "./templates/lead-outreach";
 import { buildSalesProposalPrompt } from "./templates/sales-proposal";
 import { buildSeoCampaignPrompt } from "./templates/seo-campaign";
 import { robustParseJSON } from "./utils";
+import { UserWorkflowConfig } from "./types";
 
 
 export async function executeWorkflow(params: {
@@ -145,6 +146,41 @@ export async function executeWorkflow(params: {
         durationMs,
       })
       .where(eq(workflowExecutions.id, execution.id));
+
+    // Dispatch to Pipedream webhook if enabled
+    if (uw.config) {
+      try {
+        const configData = JSON.parse(uw.config) as UserWorkflowConfig;
+        if (configData.enablePipedream && configData.pipedreamWebhookUrl) {
+          fetch(configData.pipedreamWebhookUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              event: "workflow_execution",
+              workflow: {
+                id: uw.id,
+                name: template.name,
+                slug: template.slug,
+              },
+              execution: {
+                id: execution.id,
+                durationMs,
+                tokensUsed: aiResponse.tokensUsed,
+                timestamp: new Date().toISOString(),
+              },
+              input,
+              output: outputData,
+            }),
+          }).catch(err => {
+            console.error("Failed to push to Pipedream webhook asynchronously:", err);
+          });
+        }
+      } catch (webhookErr) {
+        console.error("Failed to trigger Pipedream integration:", webhookErr);
+      }
+    }
 
     return {
       success: true,

@@ -186,3 +186,15 @@ export async function clearWorkflowHistory() {
   revalidatePath("/dashboard/customer/automate/history");
   return { success: true };
 }
+
+export async function updateWorkflowConfigAction(workflowId: string, config: string | null) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session) throw new Error("Unauthorized");
+
+  await db.update(userWorkflows)
+    .set({ config, updatedAt: new Date() })
+    .where(and(eq(userWorkflows.id, workflowId), eq(userWorkflows.userId, session.user.id)));
+
+  revalidatePath("/dashboard/customer/automate");
+  return { success: true };
+}

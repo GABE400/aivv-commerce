@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { WorkflowPlayground } from "./playground-client";
 import { ModelSelector } from "@/components/dashboard/automate/model-selector";
 import { CustomPromptEditor } from "@/components/dashboard/automate/custom-prompt-editor";
+import { PipedreamIntegration } from "@/components/dashboard/automate/pipedream-integration";
 
 export default async function WorkflowExecutionPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -107,6 +108,10 @@ export default async function WorkflowExecutionPage({ params }: { params: Promis
               <CustomPromptEditor
                 workflowId={uw.id}
                 initialCustomPrompt={uw.customPrompt}
+              />
+              <PipedreamIntegration
+                workflowId={uw.id}
+                initialConfigStr={uw.config}
               />
             </CardContent>
           </Card>
