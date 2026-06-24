@@ -160,6 +160,10 @@ class CJDropshippingClient {
       body: JSON.stringify(payload),
     });
   }
+
+  async getOrder(cjOrderNumber: string) {
+    return this.fetchCJ(`/shopping/order/getOrderDetail?orderNumber=${cjOrderNumber}`);
+  }
 }
 
 export const cj = new CJDropshippingClient();

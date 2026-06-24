@@ -2,8 +2,10 @@
 
 import { db } from "@/lib/db";
 import { orders, orderItems, products, productVariants } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc, isNotNull } from "drizzle-orm";
 import { printify } from "@/lib/printify";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function routeAutoFulfillmentAction(orderId: string) {
   try {
@@ -163,3 +165,67 @@ export async function manualFulfillOrderAction(orderId: string) {
     return { success: false, error: error.message || "Manual fulfillment failed." };
   }
 }
+
+export async function getSupplierPaymentsAction() {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  const items = await db.query.orderItems.findMany({
+    with: {
+      order: {
+        with: {
+          user: true,
+        },
+      },
+      variant: {
+        with: {
+          product: true,
+        },
+      },
+    },
+    where: isNotNull(orderItems.supplierOrderId),
+    orderBy: [desc(orderItems.orderId)],
+    limit: 50,
+  });
+
+  return items;
+}
+
+export async function getRealtimeSupplierStatusAction(supplierType: string, supplierOrderId: string) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session || session.user.role !== "admin") {
+    throw new Error("Unauthorized");
+  }
+
+  try {
+    if (supplierType === "pod") {
+      const { printify } = await import("@/lib/printify");
+      const order = await printify.getOrder(supplierOrderId);
+      const statusText = order.status || "Unknown";
+      const isPaid = statusText === "payment_received" || statusText === "processing" || statusText === "fulfilled" || statusText === "shipment_delivered";
+      return {
+        success: true,
+        status: statusText,
+        isPaid,
+      };
+    } else if (supplierType === "dropship") {
+      const { cj } = await import("@/lib/cjdropshipping");
+      const res = await cj.getOrder(supplierOrderId);
+      const order = res.data || {};
+      const statusText = order.status || "Unknown";
+      const isPaid = statusText !== "Awaiting Payment" && statusText !== "1" && statusText !== "unpaid";
+      return {
+        success: true,
+        status: statusText,
+        isPaid,
+      };
+    }
+    return { success: false, error: "Invalid supplier type" };
+  } catch (err: any) {
+    console.error("Realtime supplier status error:", err);
+    return { success: false, error: err.message || "Failed to fetch realtime status" };
+  }
+}
+

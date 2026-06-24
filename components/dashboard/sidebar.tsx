@@ -31,6 +31,7 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Products", href: "/dashboard/admin/products", icon: Package },
     { name: "Categories", href: "/dashboard/admin/categories", icon: Layers },
     { name: "Orders", href: "/dashboard/admin/orders", icon: ShoppingCart },
+    { name: "Supplier Payments", href: "/dashboard/admin/supplier-payments", icon: CreditCard },
     { name: "Users", href: "/dashboard/admin/users", icon: Users },
     { name: "User Dashboard", href: "/dashboard/customer", icon: ShoppingBag },
     { name: "Business Console", href: "/dashboard/business", icon: Box },
