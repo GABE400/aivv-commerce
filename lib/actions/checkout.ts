@@ -155,7 +155,7 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
     );
 
     // 4. Trigger Dodo Payments
-    const checkoutItems = itemsToCreate.map(item => ({
+    const rawCheckoutItems = itemsToCreate.map(item => ({
       name: `${item.name} (${item.variantName})`,
       price: parseFloat(item.price),
       quantity: item.quantity,
@@ -164,7 +164,7 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
     }));
 
     if (shippingFee > 0) {
-      checkoutItems.push({
+      rawCheckoutItems.push({
         name: "Shipping & Fulfillment Fee",
         price: parseFloat(shippingFee.toFixed(2)),
         quantity: 1,
@@ -172,6 +172,44 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
         productId: process.env.DODO_ECOMMERCE_PRODUCT_ID || process.env.DODO_PRODUCT_ID || "p_mock_123",
       });
     }
+
+    // Group items by productId to satisfy Dodo's requirement that all product IDs in product_cart must be unique
+    const groupedItemsMap = new Map<string, {
+      name: string;
+      price: number;
+      quantity: number;
+      image?: string;
+      productId: string;
+    }>();
+
+    for (const item of rawCheckoutItems) {
+      const displayName = `${item.name}${item.quantity > 1 ? ` (x${item.quantity})` : ""}`;
+      const existing = groupedItemsMap.get(item.productId);
+      if (existing) {
+        existing.name = `${existing.name}, ${displayName}`;
+        existing.price = parseFloat((existing.price + item.price * item.quantity).toFixed(2));
+      } else {
+        groupedItemsMap.set(item.productId, {
+          name: displayName,
+          price: parseFloat((item.price * item.quantity).toFixed(2)),
+          quantity: 1,
+          image: item.image,
+          productId: item.productId,
+        });
+      }
+    }
+
+    // Truncate names if they exceed Dodo's limits
+    const checkoutItems = Array.from(groupedItemsMap.values()).map(item => {
+      let finalName = item.name;
+      if (finalName.length > 200) {
+        finalName = finalName.substring(0, 197) + "...";
+      }
+      return {
+        ...item,
+        name: finalName,
+      };
+    });
 
     const checkout = await paymentProvider.createCheckoutSession({
       orderId: newOrder.id,

@@ -125,10 +125,11 @@ export function AddToCartForm({ product, variants }: AddToCartFormProps) {
             </>
           )}
         </Button>
-        
-        <button className="w-full h-14 rounded-2xl glass border border-glass-border text-foreground font-bold hover:bg-glass-highlight transition-all">
-          Custom Design Configurator
-        </button>
+        {product.type === "pod" && (
+          <button className="w-full h-14 rounded-2xl glass border border-glass-border text-foreground font-bold hover:bg-glass-highlight transition-all">
+            Custom Design Configurator
+          </button>
+        )}
       </div>
     </div>
   );

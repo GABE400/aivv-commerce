@@ -15,7 +15,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { createCheckoutAction } from "@/lib/actions/checkout";
 import { toast } from "sonner";
 
@@ -23,6 +23,11 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, getTotal, getItemCount, clearCart } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleCheckout = () => {
     startTransition(async () => {
@@ -43,7 +48,7 @@ export function CartDrawer() {
       <SheetTrigger asChild>
         <button className="relative p-2 text-foreground/80 hover:text-accent transition-colors">
           <ShoppingCart className="size-6" />
-          {getItemCount() > 0 && (
+          {mounted && getItemCount() > 0 && (
             <span className="absolute -top-1 -right-1 size-5 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center shadow-lg shadow-accent/20">
               {getItemCount()}
             </span>
@@ -58,7 +63,7 @@ export function CartDrawer() {
           </SheetTitle>
         </SheetHeader>
 
-        {items.length > 0 ? (
+        {mounted && items.length > 0 ? (
           <>
             <ScrollArea className="flex-1 px-6">
               <div className="space-y-6 py-6">
