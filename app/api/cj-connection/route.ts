@@ -5,7 +5,17 @@ import { db } from "@/lib/db";
 import { cjConnections } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { encryptApiKey } from "@/lib/encryption";
-import { cj } from "@/lib/cjdropshipping";
+import { CJDropshippingClient, resolveAuthorizedCJShop } from "@/lib/cjdropshipping";
+
+async function resolveCJShop(client: CJDropshippingClient) {
+  try {
+    const shops = await client.getShops();
+    return resolveAuthorizedCJShop(shops);
+  } catch (error) {
+    console.warn("Could not fetch CJ shops:", error);
+    return null;
+  }
+}
 
 export async function GET() {
   try {
@@ -28,6 +38,8 @@ export async function GET() {
     return NextResponse.json({
       connected: connection.isConnected,
       storeName: connection.storeName,
+      shopId: connection.shopId,
+      shopRegistered: Boolean(connection.shopId),
       lastValidatedAt: connection.lastValidatedAt,
     });
   } catch (error: any) {
@@ -53,51 +65,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "API key is required" }, { status: 400 });
     }
 
-    // Validate the API key by attempting to get an access token
-    try {
-      const testClient = new (cj.constructor as any)();
-      (testClient as any).apiKey = apiKey;
-      await (testClient as any).getAccessToken();
-    } catch (error) {
-      console.error("CJ API key validation failed:", error);
+    const testClient = new CJDropshippingClient(session.user.id, apiKey);
+
+    const isValid = await testClient.validateApiKey();
+    if (!isValid) {
+      console.error("CJ API key validation failed");
       return NextResponse.json({ error: "Invalid CJ API key" }, { status: 400 });
     }
 
-    // Encrypt the API key
+    const shop = await resolveCJShop(testClient);
     const encryptedApiKey = encryptApiKey(apiKey);
+    const resolvedStoreName = storeName || shop?.name || null;
 
-    // Check if connection already exists
     const existingConnection = await db.query.cjConnections.findFirst({
       where: eq(cjConnections.userId, session.user.id),
     });
 
+    const connectionData = {
+      encryptedApiKey,
+      iv: "",
+      storeName: resolvedStoreName,
+      shopId: shop?.id ?? null,
+      isConnected: true,
+      lastValidatedAt: new Date(),
+      accessToken: null,
+      tokenExpiry: null,
+      updatedAt: new Date(),
+    };
+
     if (existingConnection) {
-      // Update existing connection
       await db.update(cjConnections)
-        .set({
-          encryptedApiKey: encryptedApiKey,
-          iv: "", // IV is embedded in encryptedApiKey
-          storeName: storeName || null,
-          isConnected: true,
-          lastValidatedAt: new Date(),
-          accessToken: null, // Clear cached token to force refresh
-          tokenExpiry: null,
-          updatedAt: new Date(),
-        })
+        .set(connectionData)
         .where(eq(cjConnections.id, existingConnection.id));
     } else {
-      // Create new connection
       await db.insert(cjConnections).values({
         userId: session.user.id,
-        encryptedApiKey: encryptedApiKey,
-        iv: "", // IV is embedded in encryptedApiKey
-        storeName: storeName || null,
-        isConnected: true,
-        lastValidatedAt: new Date(),
+        ...connectionData,
       });
     }
 
-    return NextResponse.json({ success: true, message: "CJ Dropshipping connected successfully" });
+    const message = shop
+      ? `CJ Dropshipping connected. Store "${shop.name}" registered (ID: ${shop.id}).`
+      : "CJ Dropshipping connected, but no authorized shop was found via the Shop API. Re-create your API store in CJ (Authorization > API), then reconnect.";
+
+    return NextResponse.json({
+      success: true,
+      message,
+      shopRegistered: Boolean(shop),
+      shopId: shop?.id ?? null,
+      shopName: shop?.name ?? null,
+    });
   } catch (error: any) {
     console.error("Error connecting CJ Dropshipping:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });

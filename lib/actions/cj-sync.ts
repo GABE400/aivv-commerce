@@ -3,7 +3,8 @@
 import { db } from "@/lib/db";
 import { products, productVariants, categories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { getCJClientForUser } from "@/lib/suppliers/cj-helper";
+import { getCJClientForUser, ensureCJShopId } from "@/lib/suppliers/cj-helper";
+import { linkProductToCJShopSafe } from "@/lib/suppliers/cj-shop-sync";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -20,6 +21,7 @@ export async function syncCJDropshippingCatalogAction() {
   try {
     // Get CJ client for the current user
     const cj = await getCJClientForUser(session.user.id);
+    const shopId = await ensureCJShopId(session.user.id, cj);
     // 1. Ensure "Dropshipping" category exists
     let category = await db.query.categories.findFirst({
       where: eq(categories.slug, "dropshipping"),
@@ -58,6 +60,7 @@ export async function syncCJDropshippingCatalogAction() {
 
     let updatedCount = 0;
     let createdCount = 0;
+    let linkedCount = 0;
 
     for (const p of cjProductsList) {
       const supplierProductId = p.productId || p.id;
@@ -155,12 +158,49 @@ export async function syncCJDropshippingCatalogAction() {
       } catch (variantErr) {
         console.error(`Failed to sync variants for CJ product ${supplierProductId}:`, variantErr);
       }
+
+      // 4. Register product with CJ shop so it appears in My Products store filter
+      const syncedProduct = await db.query.products.findFirst({
+        where: eq(products.id, productId),
+        with: { variants: true },
+      });
+
+      if (syncedProduct) {
+        const linkableVariants = syncedProduct.variants
+          .filter((v) => v.supplierVariantId)
+          .map((v) => ({
+            id: v.id,
+            name: v.name,
+            sku: v.sku,
+            price: v.price,
+            supplierVariantId: v.supplierVariantId!,
+          }));
+
+        if (linkableVariants.length > 0) {
+          const linkResult = await linkProductToCJShopSafe(
+            cj,
+            shopId,
+            {
+              id: syncedProduct.id,
+              name: syncedProduct.name,
+              description: syncedProduct.description,
+              images: syncedProduct.images,
+            },
+            supplierProductId,
+            linkableVariants,
+          );
+          if (linkResult.linked) linkedCount++;
+        }
+      }
     }
 
     revalidatePath("/dashboard/admin/products");
+    const shopNote = shopId
+      ? `${linkedCount} products linked to CJ store.`
+      : "No CJ shop ID found — reconnect your API store in CJ Authorization, then sync again.";
     return {
       success: true,
-      message: `CJ Sync complete: ${createdCount} products created, ${updatedCount} products updated.`,
+      message: `CJ Sync complete: ${createdCount} created, ${updatedCount} updated. ${shopNote}`,
     };
   } catch (error: any) {
     console.error("CJ Dropshipping Sync Error:", error);

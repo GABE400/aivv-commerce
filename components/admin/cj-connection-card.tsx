@@ -11,6 +11,8 @@ import { toast } from "sonner";
 interface CJConnectionStatus {
   connected: boolean;
   storeName?: string;
+  shopId?: string;
+  shopRegistered?: boolean;
   lastValidatedAt?: string;
 }
 
@@ -54,6 +56,9 @@ export function CjConnectionCard() {
 
       if (response.ok) {
         toast.success(data.message);
+        if (data.shopRegistered === false) {
+          toast.warning("No authorized CJ shop found. Check Authorization > API in your CJ account.");
+        }
         setShowForm(false);
         setApiKey("");
         setStoreName("");
@@ -123,6 +128,13 @@ export function CjConnectionCard() {
                 <p className="font-medium text-green-500">Connected</p>
                 {status.storeName && (
                   <p className="text-sm text-muted-foreground mt-1">Store: {status.storeName}</p>
+                )}
+                {status.shopId ? (
+                  <p className="text-xs text-muted-foreground mt-1">CJ Shop ID: {status.shopId}</p>
+                ) : (
+                  <p className="text-xs text-yellow-500 mt-1">
+                    Shop not registered via CJ Shop API — reconnect after verifying Authorization &gt; API
+                  </p>
                 )}
                 {status.lastValidatedAt && (
                   <p className="text-xs text-muted-foreground mt-1">

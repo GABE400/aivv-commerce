@@ -3,6 +3,7 @@ import { orders, orderItems, productVariants, products } from "@/lib/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { printifySupplier } from "../suppliers/printify";
 import { digitalSupplier } from "../suppliers/imagekit";
+import { CJAdapter } from "../suppliers/cj";
 
 export async function processFulfillment(orderId: string) {
   // 1. Fetch order and items with variant/product info
@@ -67,7 +68,32 @@ export async function processFulfillment(orderId: string) {
     // TODO: Send email with download links via Postmark/Resend
   }
 
-  // 5. Update overall order status if necessary
+  // 5. Trigger Dropship fulfillment (CJ Dropshipping)
+  if (dropshipItems.length > 0) {
+    const cjSupplier = new CJAdapter(orderData.userId);
+    const { supplierOrderId } = await cjSupplier.createOrder({
+      orderId: orderData.id,
+      customer: {
+        name: orderData.user.name,
+        email: orderData.user.email,
+        address: orderData.shippingAddress || "",
+      },
+      items: dropshipItems.map(item => ({
+        sku: item.variant.sku,
+        quantity: item.quantity,
+        supplierVariantId: item.variant.supplierVariantId || undefined,
+      }))
+    });
+
+    await db.update(orderItems)
+      .set({ 
+        supplierOrderId, 
+        fulfillmentStatus: "in_progress" 
+      })
+      .where(inArray(orderItems.id, dropshipItems.map(i => i.id)));
+  }
+
+  // 6. Update overall order status if necessary
   await db.update(orders)
     .set({ status: "processing" })
     .where(eq(orders.id, orderId as any));

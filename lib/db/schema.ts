@@ -349,6 +349,7 @@ export const cjConnections = pgTable("cj_connection", {
   encryptedApiKey: text("encryptedApiKey").notNull(),
   iv: text("iv").notNull(),
   storeName: text("storeName"),
+  shopId: text("shopId"),
   isConnected: boolean("isConnected").default(false).notNull(),
   lastValidatedAt: timestamp("lastValidatedAt"),
   accessToken: text("accessToken"), // Cached access token
