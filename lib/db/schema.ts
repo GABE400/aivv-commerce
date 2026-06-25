@@ -95,6 +95,7 @@ export const productVariants = pgTable("product_variant", {
   name: text("name").notNull(), // color, size, etc
   sku: text("sku").notNull().unique(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
+  costPrice: decimal("costPrice", { precision: 10, scale: 2 }), // Supplier cost (what CJ charges us)
   inventory: integer("inventory").default(0), // Only for digital or tracked dropship
   supplierVariantId: text("supplierVariantId"), // External ID for Printify/Printful
   assetUrl: text("assetUrl"), // For digital products (ImageKit)

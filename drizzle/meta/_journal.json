@@ -8,6 +8,13 @@
       "when": 1782366958195,
       "tag": "0000_narrow_mordo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1782422618638,
+      "tag": "0001_strong_captain_america",
+      "breakpoints": true
     }
   ]
 }

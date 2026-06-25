@@ -4,10 +4,13 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { DataTable } from "@/components/ui/data-table";
 import { Button } from "@/components/ui/button";
-import { Edit2, Trash2, Loader2 } from "lucide-react";
+import { Edit2, Trash2, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
-import { deleteProductAction } from "@/lib/actions/products";
+import {
+  deleteProductAction,
+  reactivateProductAction,
+} from "@/lib/actions/products";
 import { toast } from "sonner";
 
 interface ProductsTableProps {
@@ -18,18 +21,21 @@ export function ProductsTable({ data }: ProductsTableProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [reactivatingId, setReactivatingId] = useState<string | null>(null);
 
   const handleDelete = (productId: string, productName: string) => {
-    if (!window.confirm(`Are you sure you want to delete "${productName}"? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete "${productName}"?`)) {
       return;
     }
 
     setDeletingId(productId);
     startTransition(async () => {
       try {
-        const res = await deleteProductAction(productId) as any;
+        const res = (await deleteProductAction(productId)) as any;
         if (res.success) {
-          toast.success(`Successfully deleted ${productName}.`);
+          toast.success(
+            res.message || `Successfully processed ${productName}.`,
+          );
           router.refresh();
         } else {
           toast.error(res.error || "Failed to delete product.");
@@ -42,6 +48,25 @@ export function ProductsTable({ data }: ProductsTableProps) {
     });
   };
 
+  const handleReactivate = (productId: string, productName: string) => {
+    setReactivatingId(productId);
+    startTransition(async () => {
+      try {
+        const res = (await reactivateProductAction(productId)) as any;
+        if (res.success) {
+          toast.success(`Successfully reactivated ${productName}!`);
+          router.refresh();
+        } else {
+          toast.error(res.error || "Failed to reactivate product.");
+        }
+      } catch (err) {
+        toast.error("An unexpected error occurred.");
+      } finally {
+        setReactivatingId(null);
+      }
+    });
+  };
+
   const columns = [
     {
       header: "Product",
@@ -50,14 +75,23 @@ export function ProductsTable({ data }: ProductsTableProps) {
         <div className="flex items-center gap-3">
           <div className="relative size-10 rounded-lg overflow-hidden bg-muted flex items-center justify-center border border-glass-border">
             {row.images[0] ? (
-              <Image src={row.images[0]} alt={row.name} fill className="object-cover" />
+              <Image
+                src={row.images[0]}
+                alt={row.name}
+                fill
+                className="object-cover"
+              />
             ) : (
-              <span className="text-[10px] text-muted-foreground uppercase font-bold">No Image</span>
+              <span className="text-[10px] text-muted-foreground uppercase font-bold">
+                No Image
+              </span>
             )}
           </div>
           <div>
             <div className="font-bold">{row.name}</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-widest">{row.category?.name || "Uncategorized"}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-widest">
+              {row.category?.name || "Uncategorized"}
+            </div>
           </div>
         </div>
       ),
@@ -75,14 +109,22 @@ export function ProductsTable({ data }: ProductsTableProps) {
       header: "Variants",
       accessorKey: "variants",
       cell: (row: any) => (
-        <span className="text-sm font-medium">{row.variants.length} Variants</span>
+        <span className="text-sm font-medium">
+          {row.variants.length} Variants
+        </span>
       ),
     },
     {
       header: "Status",
       accessorKey: "isActive",
       cell: (row: any) => (
-        <span className={row.isActive ? "text-emerald-500 font-bold" : "text-red-500 font-bold"}>
+        <span
+          className={
+            row.isActive
+              ? "text-emerald-500 font-bold"
+              : "text-red-500 font-bold"
+          }
+        >
           {row.isActive ? "Active" : "Inactive"}
         </span>
       ),
@@ -95,7 +137,54 @@ export function ProductsTable({ data }: ProductsTableProps) {
         if (prices.length === 0) return "-";
         const min = Math.min(...prices);
         const max = Math.max(...prices);
-        return <span className="font-bold">${min === max ? min.toFixed(2) : `${min.toFixed(2)} - ${max.toFixed(2)}`}</span>;
+        return (
+          <span className="font-bold">
+            $
+            {min === max
+              ? min.toFixed(2)
+              : `${min.toFixed(2)} - ${max.toFixed(2)}`}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Cost Range",
+      accessorKey: "variants",
+      cell: (row: any) => {
+        const costPrices = row.variants
+          .map((v: any) => parseFloat(v.costPrice))
+          .filter(Boolean);
+        if (costPrices.length === 0) return "-";
+        const minCost = Math.min(...costPrices);
+        const maxCost = Math.max(...costPrices);
+        return (
+          <span className="text-sm text-muted-foreground">
+            $
+            {minCost === maxCost
+              ? minCost.toFixed(2)
+              : `${minCost.toFixed(2)} - ${maxCost.toFixed(2)}`}
+          </span>
+        );
+      },
+    },
+    {
+      header: "Profit Range",
+      accessorKey: "variants",
+      cell: (row: any) => {
+        const profits = row.variants
+          .filter((v: any) => v.costPrice && v.price)
+          .map((v: any) => parseFloat(v.price) - parseFloat(v.costPrice));
+        if (profits.length === 0) return "-";
+        const minProfit = Math.min(...profits);
+        const maxProfit = Math.max(...profits);
+        return (
+          <span className="text-sm font-medium text-green-600">
+            $
+            {minProfit === maxProfit
+              ? minProfit.toFixed(2)
+              : `${minProfit.toFixed(2)} - ${maxProfit.toFixed(2)}`}
+          </span>
+        );
       },
     },
     {
@@ -122,20 +211,44 @@ export function ProductsTable({ data }: ProductsTableProps) {
         <div className="flex items-center gap-2">
           {row.supplierProductId ? (
             <Link href={`/dashboard/admin/products/${row.id}`}>
-              <Button variant="ghost" size="icon" className="size-8 h-8 w-8 hover:bg-accent/10 hover:text-accent">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 h-8 w-8 hover:bg-accent/10 hover:text-accent"
+              >
                 <Edit2 className="size-3.5" />
               </Button>
             </Link>
           ) : (
             <div title="Local products cannot be customized">
-              <Button variant="ghost" size="icon" disabled className="size-8 h-8 w-8 opacity-20 cursor-not-allowed">
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled
+                className="size-8 h-8 w-8 opacity-20 cursor-not-allowed"
+              >
                 <Edit2 className="size-3.5" />
               </Button>
             </div>
           )}
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          {!row.isActive ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              disabled={isPending && reactivatingId === row.id}
+              onClick={() => handleReactivate(row.id, row.name)}
+              className="size-8 h-8 w-8 text-green-500 hover:text-green-600 hover:bg-green-500/10 disabled:opacity-40"
+            >
+              {isPending && reactivatingId === row.id ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="size-3.5" />
+              )}
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            size="icon"
             disabled={isPending && deletingId === row.id}
             onClick={() => handleDelete(row.id, row.name)}
             className="size-8 h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10 disabled:opacity-40"
@@ -151,10 +264,5 @@ export function ProductsTable({ data }: ProductsTableProps) {
     },
   ];
 
-  return (
-    <DataTable 
-      columns={columns} 
-      data={data} 
-    />
-  );
+  return <DataTable columns={columns} data={data} />;
 }

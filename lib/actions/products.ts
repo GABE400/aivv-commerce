@@ -1,15 +1,20 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { products, productVariants, categories } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import {
+  products,
+  productVariants,
+  categories,
+  orderItems,
+} from "@/lib/db/schema";
+import { eq, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 export async function createProductAction(data: any) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -18,16 +23,19 @@ export async function createProductAction(data: any) {
 
   try {
     // 1. Create Product
-    const [newProduct] = await db.insert(products).values({
-      name: data.name,
-      slug: data.slug,
-      description: data.description,
-      type: data.type,
-      categoryId: data.categoryId,
-      supplierId: data.supplierId || null,
-      images: data.images,
-      markupPercentage: data.markupPercentage || 0,
-    }).returning();
+    const [newProduct] = await db
+      .insert(products)
+      .values({
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        type: data.type,
+        categoryId: data.categoryId,
+        supplierId: data.supplierId || null,
+        images: data.images,
+        markupPercentage: data.markupPercentage || 0,
+      })
+      .returning();
 
     // 2. Create Variants
     if (data.variants && data.variants.length > 0) {
@@ -37,10 +45,11 @@ export async function createProductAction(data: any) {
           name: v.name,
           sku: v.sku,
           price: v.price,
+          costPrice: v.costPrice || null,
           inventory: v.inventory || 0,
           supplierVariantId: v.supplierVariantId,
           assetUrl: v.assetUrl,
-        }))
+        })),
       );
     }
 
@@ -48,13 +57,16 @@ export async function createProductAction(data: any) {
     return { success: true, id: newProduct.id };
   } catch (error: any) {
     console.error("Failed to create product:", error);
-    return { success: false, error: error.message || "Failed to create product" };
+    return {
+      success: false,
+      error: error.message || "Failed to create product",
+    };
   }
 }
 
 export async function updateProductAction(productId: string, data: any) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -63,7 +75,8 @@ export async function updateProductAction(productId: string, data: any) {
 
   try {
     // 1. Update Product
-    await db.update(products)
+    await db
+      .update(products)
       .set({
         name: data.name,
         slug: data.slug,
@@ -78,7 +91,9 @@ export async function updateProductAction(productId: string, data: any) {
       .where(eq(products.id, productId));
 
     // 2. Delete existing variants and re-insert
-    await db.delete(productVariants).where(eq(productVariants.productId, productId));
+    await db
+      .delete(productVariants)
+      .where(eq(productVariants.productId, productId));
 
     if (data.variants && data.variants.length > 0) {
       await db.insert(productVariants).values(
@@ -87,10 +102,11 @@ export async function updateProductAction(productId: string, data: any) {
           name: v.name,
           sku: v.sku,
           price: v.price,
+          costPrice: v.costPrice || null,
           inventory: v.inventory || 0,
           supplierVariantId: v.supplierVariantId,
           assetUrl: v.assetUrl,
-        }))
+        })),
       );
     }
 
@@ -99,13 +115,16 @@ export async function updateProductAction(productId: string, data: any) {
     return { success: true };
   } catch (error: any) {
     console.error("Failed to update product:", error);
-    return { success: false, error: error.message || "Failed to update product" };
+    return {
+      success: false,
+      error: error.message || "Failed to update product",
+    };
   }
 }
 
 export async function deleteProductAction(productId: string) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -113,26 +132,62 @@ export async function deleteProductAction(productId: string) {
   }
 
   try {
-    // Soft delete: mark product as inactive instead of deleting
-    // This preserves order history and foreign key relationships
-    await db.update(products)
-      .set({
-        isActive: false,
-        updatedAt: new Date(),
-      })
-      .where(eq(products.id, productId));
+    // Check if there are any order items for this product
+    const variants = await db.query.productVariants.findMany({
+      where: eq(productVariants.productId, productId),
+    });
 
-    revalidatePath("/dashboard/admin/products");
-    return { success: true };
+    const hasOrders =
+      variants.length > 0
+        ? (await db.query.orderItems.findFirst({
+            where:
+              variants.length === 1
+                ? eq(orderItems.variantId, variants[0].id)
+                : or(...variants.map((v) => eq(orderItems.variantId, v.id))),
+          })) !== undefined
+        : false;
+
+    if (hasOrders) {
+      // Soft delete: mark product as inactive to preserve order history
+      await db
+        .update(products)
+        .set({
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(products.id, productId));
+
+      revalidatePath("/dashboard/admin/products");
+      return {
+        success: true,
+        message: "Product marked as inactive (has existing orders)",
+      };
+    } else {
+      // Hard delete: delete variants first, then product
+      await db
+        .delete(productVariants)
+        .where(eq(productVariants.productId, productId));
+
+      await db.delete(products).where(eq(products.id, productId));
+
+      revalidatePath("/dashboard/admin/products");
+      return {
+        success: true,
+        message: "Product permanently deleted",
+      };
+    }
   } catch (error: any) {
     console.error("Failed to delete product:", error);
-    return { success: false, error: error.message || "Failed to delete product" };
+    return {
+      success: false,
+      error: error.message || "Failed to delete product",
+    };
   }
 }
 
 export async function reactivateProductAction(productId: string) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -140,7 +195,8 @@ export async function reactivateProductAction(productId: string) {
   }
 
   try {
-    await db.update(products)
+    await db
+      .update(products)
       .set({
         isActive: true,
         updatedAt: new Date(),
@@ -151,13 +207,19 @@ export async function reactivateProductAction(productId: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Failed to reactivate product:", error);
-    return { success: false, error: error.message || "Failed to reactivate product" };
+    return {
+      success: false,
+      error: error.message || "Failed to reactivate product",
+    };
   }
 }
 
-export async function createCategoryAction(data: { name: string; description?: string }) {
+export async function createCategoryAction(data: {
+  name: string;
+  description?: string;
+}) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -172,23 +234,29 @@ export async function createCategoryAction(data: { name: string; description?: s
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
 
-    const [newCategory] = await db.insert(categories).values({
-      name: data.name,
-      slug,
-      description: data.description,
-    }).returning();
+    const [newCategory] = await db
+      .insert(categories)
+      .values({
+        name: data.name,
+        slug,
+        description: data.description,
+      })
+      .returning();
 
     revalidatePath("/dashboard/admin/products");
     return { success: true, category: newCategory };
   } catch (error: any) {
     console.error("Failed to create category:", error);
-    return { success: false, error: error.message || "Failed to create category" };
+    return {
+      success: false,
+      error: error.message || "Failed to create category",
+    };
   }
 }
 
 export async function deleteCategoryAction(categoryId: string) {
   const session = await auth.api.getSession({
-    headers: await headers()
+    headers: await headers(),
   });
 
   if (!session || session.user.role !== "admin") {
@@ -202,7 +270,11 @@ export async function deleteCategoryAction(categoryId: string) {
     });
 
     if (productUsingCategory) {
-      return { success: false, error: "Cannot delete category. There are products currently assigned to it." };
+      return {
+        success: false,
+        error:
+          "Cannot delete category. There are products currently assigned to it.",
+      };
     }
 
     await db.delete(categories).where(eq(categories.id, categoryId));
@@ -211,6 +283,9 @@ export async function deleteCategoryAction(categoryId: string) {
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete category:", error);
-    return { success: false, error: error.message || "Failed to delete category" };
+    return {
+      success: false,
+      error: error.message || "Failed to delete category",
+    };
   }
 }

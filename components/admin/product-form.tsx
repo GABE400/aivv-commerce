@@ -38,6 +38,10 @@ const productSchema = z.object({
         name: z.string().min(1, "Variant name is required"),
         sku: z.string().min(1, "SKU is required"),
         price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format"),
+        costPrice: z
+          .string()
+          .regex(/^\d+(\.\d{1,2})?$/)
+          .optional(),
         inventory: z.number().int().min(0).optional(),
         supplierVariantId: z.string().optional(),
         assetUrl: z.string().optional(),
@@ -79,6 +83,7 @@ export function ProductForm({
     name: v.name,
     sku: v.sku,
     price: v.price,
+    costPrice: v.costPrice || "",
     inventory: v.inventory || 0,
     supplierVariantId: v.supplierVariantId || "",
     assetUrl: v.assetUrl || "",
@@ -290,13 +295,47 @@ export function ProductForm({
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">
-                      Price
+                      CJ Price (Cost)
+                    </Label>
+                    <Input
+                      {...form.register(`variants.${index}.costPrice` as const)}
+                      placeholder="19.99"
+                      disabled={!!variants[index].supplierVariantId}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                      Your Price (Sell)
                     </Label>
                     <Input
                       {...form.register(`variants.${index}.price` as const)}
                       placeholder="29.99"
                     />
                   </div>
+                  {variants[index].costPrice && variants[index].price && (
+                    <div className="space-y-1">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">
+                        Profit
+                      </Label>
+                      <p className="text-sm font-medium text-green-600">
+                        $
+                        {(
+                          parseFloat(variants[index].price) -
+                          parseFloat(variants[index].costPrice)
+                        ).toFixed(2)}
+                        <span className="text-xs text-muted-foreground ml-1">
+                          (
+                          {(
+                            ((parseFloat(variants[index].price) -
+                              parseFloat(variants[index].costPrice)) /
+                              parseFloat(variants[index].price)) *
+                            100
+                          ).toFixed(1)}
+                          %)
+                        </span>
+                      </p>
+                    </div>
+                  )}
                   <div className="flex items-end justify-between gap-4">
                     <div className="space-y-2 flex-1">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">
