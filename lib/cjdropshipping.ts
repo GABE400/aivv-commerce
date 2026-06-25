@@ -22,9 +22,31 @@ export interface CJCreateOrderParams {
 
 export interface CJShop {
   id: string;
+  createDate?: string;
   name: string;
   status: number;
   type: string;
+  updateDate?: string;
+  individuationNum?: string;
+  fulfillmentStatus?: string;
+  shopifyPodSettings?: string;
+  marketplace?: string;
+  aliasName?: string;
+  syncInventory?: number;
+  syncInventoryRate?: number;
+  isCb?: number;
+  trackUrlTemplate?: string;
+  emailNotification?: number;
+  email?: string;
+  countryCode?: string;
+  storeCountry?: string;
+  platformLogoUrl?: string;
+  currencyCode?: string;
+  businessType?: number;
+  deliveryProfileOpen?: number;
+  haveDeliveryProfileScopes?: number;
+  deliveryProfileSpecifiedShop?: number;
+  deliveryProfileNewShop?: number;
 }
 
 export interface CJSaveStoreProductParams {
@@ -45,6 +67,9 @@ export interface CJSaveStoreVariant {
   image: string;
   shopPrice?: number;
   shopPriceCurrency?: string;
+  weight?: number;
+  weightUnit?: string;
+  oldInventoryQuantity?: number;
 }
 
 export interface CJCreateProductConnectionParams {
@@ -61,12 +86,23 @@ export interface CJCreateProductConnectionParams {
 }
 
 export function resolveAuthorizedCJShop(shops: CJShop[]): CJShop | null {
+  console.log("resolveAuthorizedCJShop called with shops:", shops);
+
   const authorized = shops.filter((shop) => shop.status === 1);
+  console.log("Authorized shops (status=1):", authorized);
+
   if (authorized.length === 0) return null;
-  return (
-    authorized.find((shop) => shop.type?.toLowerCase() === "api") ??
-    authorized[0]
-  );
+
+  // Try to find API-type shop first
+  const apiShop = authorized.find((shop) => shop.type?.toLowerCase() === "api");
+  if (apiShop) {
+    console.log("Found API-type shop:", apiShop);
+    return apiShop;
+  }
+
+  // Fallback to first authorized shop
+  console.log("Using first authorized shop:", authorized[0]);
+  return authorized[0];
 }
 
 class CJDropshippingClient {
@@ -93,25 +129,9 @@ class CJDropshippingClient {
     }
 
     try {
-      const response = await fetch(
-        `${CJ_BASE_URL}/authentication/getAccessToken`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            apiKey: this.apiKey,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const res = (await response.json()) as any;
-      return res.code === 200 && res.data?.accessToken;
+      // Use getAccessToken() to validate and cache the token at the same time
+      await this.getAccessToken();
+      return true;
     } catch (error) {
       console.error("Error validating CJ API key:", error);
       return false;
@@ -150,7 +170,7 @@ class CJDropshippingClient {
       }
 
       const res = (await response.json()) as any;
-      if (res.code !== 200 || !res.data?.accessToken) {
+      if ((res.code !== 0 && res.code !== 200) || !res.data?.accessToken) {
         throw new Error(
           `CJ Auth returned failed body: ${res.message || JSON.stringify(res)}`,
         );
@@ -203,7 +223,8 @@ class CJDropshippingClient {
     }
 
     const res = (await response.json()) as any;
-    if (res.code !== 200) {
+    // CJ API uses both code 0 and 200 for success
+    if (res.code !== 0 && res.code !== 200) {
       throw new Error(
         `CJ API returned error code ${res.code}: ${res.message || JSON.stringify(res)}`,
       );
@@ -298,8 +319,19 @@ class CJDropshippingClient {
   }
 
   async getShops(): Promise<CJShop[]> {
+    console.log("Calling CJ getShops API...");
     const res = await this.fetchCJ("/shop/getShops");
-    return Array.isArray(res.data) ? res.data : [];
+    console.log("CJ getShops API response:", res);
+
+    let shops: CJShop[] = [];
+    if (Array.isArray(res.data)) {
+      shops = res.data;
+    } else if (Array.isArray(res.result)) {
+      shops = res.result;
+    }
+
+    console.log("Parsed CJ shops list:", shops);
+    return shops;
   }
 
   async addToMyProduct(productId: string) {

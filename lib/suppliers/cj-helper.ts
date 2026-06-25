@@ -41,18 +41,30 @@ export async function getCJShopIdForUser(userId: string): Promise<string | null>
 }
 
 export async function ensureCJShopId(userId: string, client: CJDropshippingClient): Promise<string | null> {
+  console.log("ensureCJShopId called for userId:", userId);
   const connection = await db.query.cjConnections.findFirst({
     where: eq(cjConnections.userId, userId),
   });
 
-  if (!connection) return null;
-  if (connection.shopId) return connection.shopId;
+  if (!connection) {
+    console.log("ensureCJShopId: No connection found");
+    return null;
+  }
+  if (connection.shopId) {
+    console.log("ensureCJShopId: Found existing shopId:", connection.shopId);
+    return connection.shopId;
+  }
 
   try {
+    console.log("ensureCJShopId: No shopId, fetching shops...");
     const shops = await client.getShops();
     const shop = resolveAuthorizedCJShop(shops);
-    if (!shop) return null;
+    if (!shop) {
+      console.log("ensureCJShopId: No authorized shop found");
+      return null;
+    }
 
+    console.log("ensureCJShopId: Updating connection with shopId:", shop.id);
     await db.update(cjConnections)
       .set({
         shopId: shop.id,
