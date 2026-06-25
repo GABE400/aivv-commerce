@@ -83,6 +83,7 @@ export const products = pgTable("product", {
   isActive: boolean("isActive").default(true).notNull(),
   supplierId: text("supplierId").references(() => users.id),
   supplierProductId: text("supplierProductId"), // External ID for sync (e.g. Printify)
+  markupPercentage: integer("markupPercentage").default(0), // Profit margin percentage
   metadata: text("metadata"), // JSON for supplier specific info
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -337,6 +338,28 @@ export const workflowRunSchedulerRelations = relations(workflowRuns, ({ one }) =
   }),
   user: one(users, {
     fields: [workflowRuns.userId],
+    references: [users.id],
+  }),
+}));
+
+// CJ Dropshipping Connection Table
+export const cjConnections = pgTable("cj_connection", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId").notNull().references(() => users.id),
+  encryptedApiKey: text("encryptedApiKey").notNull(),
+  iv: text("iv").notNull(),
+  storeName: text("storeName"),
+  isConnected: boolean("isConnected").default(false).notNull(),
+  lastValidatedAt: timestamp("lastValidatedAt"),
+  accessToken: text("accessToken"), // Cached access token
+  tokenExpiry: timestamp("tokenExpiry"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const cjConnectionRelations = relations(cjConnections, ({ one }) => ({
+  user: one(users, {
+    fields: [cjConnections.userId],
     references: [users.id],
   }),
 }));

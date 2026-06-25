@@ -17,36 +17,35 @@ export async function createProductAction(data: any) {
   }
 
   try {
-    return await db.transaction(async (tx) => {
-      // 1. Create Product
-      const [newProduct] = await tx.insert(products).values({
-        name: data.name,
-        slug: data.slug,
-        description: data.description,
-        type: data.type,
-        categoryId: data.categoryId,
-        supplierId: data.supplierId,
-        images: data.images, 
-      }).returning();
+    // 1. Create Product
+    const [newProduct] = await db.insert(products).values({
+      name: data.name,
+      slug: data.slug,
+      description: data.description,
+      type: data.type,
+      categoryId: data.categoryId,
+      supplierId: data.supplierId || null,
+      images: data.images,
+      markupPercentage: data.markupPercentage || 0,
+    }).returning();
 
-      // 2. Create Variants
-      if (data.variants && data.variants.length > 0) {
-        await tx.insert(productVariants).values(
-          data.variants.map((v: any) => ({
-            productId: newProduct.id,
-            name: v.name,
-            sku: v.sku,
-            price: v.price,
-            inventory: v.inventory || 0,
-            supplierVariantId: v.supplierVariantId,
-            assetUrl: v.assetUrl,
-          }))
-        );
-      }
+    // 2. Create Variants
+    if (data.variants && data.variants.length > 0) {
+      await db.insert(productVariants).values(
+        data.variants.map((v: any) => ({
+          productId: newProduct.id,
+          name: v.name,
+          sku: v.sku,
+          price: v.price,
+          inventory: v.inventory || 0,
+          supplierVariantId: v.supplierVariantId,
+          assetUrl: v.assetUrl,
+        }))
+      );
+    }
 
-      revalidatePath("/dashboard/admin/products");
-      return { success: true, id: newProduct.id };
-    });
+    revalidatePath("/dashboard/admin/products");
+    return { success: true, id: newProduct.id };
   } catch (error: any) {
     console.error("Failed to create product:", error);
     return { success: false, error: error.message || "Failed to create product" };
@@ -63,51 +62,41 @@ export async function updateProductAction(productId: string, data: any) {
   }
 
   try {
-    return await db.transaction(async (tx) => {
-      // 0. Verify this is a Printify product
-      const product = await tx.query.products.findFirst({
-        where: eq(products.id, productId)
-      });
+    // 1. Update Product
+    await db.update(products)
+      .set({
+        name: data.name,
+        slug: data.slug,
+        description: data.description,
+        type: data.type,
+        categoryId: data.categoryId,
+        supplierId: data.supplierId || null,
+        images: data.images,
+        markupPercentage: data.markupPercentage || 0,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, productId));
 
-      if (!product || !product.supplierProductId) {
-        return { success: false, error: "Customization restricted to Printify products." };
-      }
+    // 2. Delete existing variants and re-insert
+    await db.delete(productVariants).where(eq(productVariants.productId, productId));
 
-      // 1. Update Product
-      await tx.update(products)
-        .set({
-          name: data.name,
-          slug: data.slug,
-          description: data.description,
-          type: data.type,
-          categoryId: data.categoryId,
-          supplierId: data.supplierId,
-          images: data.images,
-          updatedAt: new Date(),
-        })
-        .where(eq(products.id, productId));
+    if (data.variants && data.variants.length > 0) {
+      await db.insert(productVariants).values(
+        data.variants.map((v: any) => ({
+          productId: productId,
+          name: v.name,
+          sku: v.sku,
+          price: v.price,
+          inventory: v.inventory || 0,
+          supplierVariantId: v.supplierVariantId,
+          assetUrl: v.assetUrl,
+        }))
+      );
+    }
 
-      // 2. Delete existing variants and re-insert
-      await tx.delete(productVariants).where(eq(productVariants.productId, productId));
-
-      if (data.variants && data.variants.length > 0) {
-        await tx.insert(productVariants).values(
-          data.variants.map((v: any) => ({
-            productId: productId,
-            name: v.name,
-            sku: v.sku,
-            price: v.price,
-            inventory: v.inventory || 0,
-            supplierVariantId: v.supplierVariantId,
-            assetUrl: v.assetUrl,
-          }))
-        );
-      }
-
-      revalidatePath("/dashboard/admin/products");
-      revalidatePath(`/products/${data.slug}`);
-      return { success: true };
-    });
+    revalidatePath("/dashboard/admin/products");
+    revalidatePath(`/products/${data.slug}`);
+    return { success: true };
   } catch (error: any) {
     console.error("Failed to update product:", error);
     return { success: false, error: error.message || "Failed to update product" };
@@ -124,12 +113,13 @@ export async function deleteProductAction(productId: string) {
   }
 
   try {
-    // 1. Delete associated variants first
-    await db.delete(productVariants)
-      .where(eq(productVariants.productId, productId));
-
-    // 2. Delete the product itself
-    await db.delete(products)
+    // Soft delete: mark product as inactive instead of deleting
+    // This preserves order history and foreign key relationships
+    await db.update(products)
+      .set({
+        isActive: false,
+        updatedAt: new Date(),
+      })
       .where(eq(products.id, productId));
 
     revalidatePath("/dashboard/admin/products");
@@ -137,6 +127,31 @@ export async function deleteProductAction(productId: string) {
   } catch (error: any) {
     console.error("Failed to delete product:", error);
     return { success: false, error: error.message || "Failed to delete product" };
+  }
+}
+
+export async function reactivateProductAction(productId: string) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session || session.user.role !== "admin") {
+    return { success: false, error: "Unauthorized. Admin role required." };
+  }
+
+  try {
+    await db.update(products)
+      .set({
+        isActive: true,
+        updatedAt: new Date(),
+      })
+      .where(eq(products.id, productId));
+
+    revalidatePath("/dashboard/admin/products");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to reactivate product:", error);
+    return { success: false, error: error.message || "Failed to reactivate product" };
   }
 }
 

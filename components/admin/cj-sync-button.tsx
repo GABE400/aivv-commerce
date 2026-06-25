@@ -21,8 +21,12 @@ export function CjSyncButton() {
       } else {
         toast.error(result.error || "Sync failed");
       }
-    } catch (error) {
-      toast.error("Something went wrong during synchronization");
+    } catch (error: any) {
+      if (error.message?.includes("not connected")) {
+        toast.error("Please connect your CJ Dropshipping account first");
+      } else {
+        toast.error("Something went wrong during synchronization");
+      }
     } finally {
       setIsLoading(false);
     }

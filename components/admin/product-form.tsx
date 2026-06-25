@@ -28,6 +28,7 @@ const productSchema = z.object({
   type: z.enum(["dropship", "pod", "digital", "subscription"]),
   categoryId: z.string().uuid("Please select a category"),
   supplierId: z.string().optional(),
+  markupPercentage: z.number().int().min(0).max(100).default(0),
   variants: z.array(z.object({
     name: z.string().min(1, "Variant name is required"),
     sku: z.string().min(1, "SKU is required"),
@@ -83,6 +84,7 @@ export function ProductForm({ categories, suppliers, initialData, productId }: P
       type: initialData?.type || "dropship",
       categoryId: initialData?.categoryId || "",
       supplierId: initialData?.supplierId || "",
+      markupPercentage: initialData?.markupPercentage || 0,
       variants: defaultVariants,
     },
   });
@@ -324,6 +326,25 @@ export function ProductForm({ categories, suppliers, initialData, productId }: P
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="markupPercentage">Markup Percentage (%)</Label>
+                <Input 
+                  id="markupPercentage"
+                  type="number"
+                  min="0"
+                  max="100"
+                  {...form.register("markupPercentage", { valueAsNumber: true })}
+                  placeholder="0"
+                  className="glass border-glass-border"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Profit margin added to supplier price (0-100%)
+                </p>
+                {form.formState.errors.markupPercentage && (
+                  <p className="text-xs text-red-500">{form.formState.errors.markupPercentage.message}</p>
+                )}
               </div>
             </CardContent>
           </Card>

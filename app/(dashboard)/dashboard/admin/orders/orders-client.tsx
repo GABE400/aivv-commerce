@@ -31,6 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { manualFulfillOrderAction } from "@/lib/actions/fulfillment";
+import { deleteOrderAction } from "@/lib/actions/orders";
 
 interface OrdersClientProps {
   initialOrders: any[];
@@ -58,6 +59,25 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
         }
       } catch (err) {
         toast.error("An unexpected error occurred during fulfillment.");
+      }
+    });
+  };
+
+  const handleCancelOrder = (orderId: string) => {
+    startTransition(async () => {
+      try {
+        const res = await deleteOrderAction(orderId);
+        if (res.success) {
+          toast.success("Order cancelled successfully.");
+          router.refresh();
+          if (selectedOrder && selectedOrder.id === orderId) {
+            setSelectedOrder(null);
+          }
+        } else {
+          toast.error(res.error || "Failed to cancel order.");
+        }
+      } catch (err) {
+        toast.error("An unexpected error occurred.");
       }
     });
   };
@@ -154,15 +174,33 @@ export function OrdersClient({ initialOrders }: OrdersClientProps) {
                       {format(new Date(order.createdAt), "MMM d, h:mm a")}
                     </td>
                     <td className="p-4 pr-6 text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedOrder(order)}
-                        className="gap-1 rounded-xl glass border-glass-border hover:bg-glass-highlight text-xs font-bold"
-                      >
-                        <Eye className="size-3.5" />
-                        Inspect
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedOrder(order)}
+                          className="gap-1 rounded-xl glass border-glass-border hover:bg-glass-highlight text-xs font-bold"
+                        >
+                          <Eye className="size-3.5" />
+                          Inspect
+                        </Button>
+                        {order.status !== "cancelled" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleCancelOrder(order.id)}
+                            disabled={isPending}
+                            className="gap-1 rounded-xl glass border-red-500/20 hover:bg-red-500/10 text-red-500 text-xs font-bold"
+                          >
+                            {isPending ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <XCircle className="size-3.5" />
+                            )}
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))

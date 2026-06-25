@@ -24,14 +24,20 @@ class CJDropshippingClient {
   private apiKey: string;
   private cachedToken: string | null = null;
   private tokenExpiry: Date | null = null;
+  private userId: string | null = null;
 
-  constructor() {
-    this.apiKey = process.env.CJ_API_KEY || "";
+  constructor(userId: string | null = null, apiKey: string | undefined = undefined) {
+    if (apiKey) {
+      this.apiKey = apiKey;
+    } else {
+      this.apiKey = process.env.CJ_API_KEY || "";
+    }
+    this.userId = userId;
   }
 
   private async getAccessToken(): Promise<string> {
     if (!this.apiKey) {
-      throw new Error("CJ Dropshipping API Key is missing in environment variables (CJ_API_KEY).");
+      throw new Error("CJ Dropshipping API Key is missing. Please connect your CJ Dropshipping account.");
     }
 
     if (this.cachedToken && this.tokenExpiry && new Date() < this.tokenExpiry) {
@@ -60,6 +66,25 @@ class CJDropshippingClient {
 
       this.cachedToken = res.data.accessToken;
       this.tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 1-day safety margin
+      
+      // Update cached token in database if userId is provided
+      if (this.userId) {
+        try {
+          const { db } = await import("@/lib/db");
+          const { cjConnections } = await import("@/lib/db/schema");
+          const { eq } = await import("drizzle-orm");
+          await db.update(cjConnections)
+            .set({
+              accessToken: this.cachedToken,
+              tokenExpiry: this.tokenExpiry,
+              updatedAt: new Date(),
+            })
+            .where(eq(cjConnections.userId, this.userId));
+        } catch (dbError) {
+          console.error("Failed to cache token in database:", dbError);
+        }
+      }
+      
       return this.cachedToken!;
     } catch (error) {
       console.error("Error obtaining CJ Access Token:", error);
@@ -165,5 +190,7 @@ class CJDropshippingClient {
     return this.fetchCJ(`/shopping/order/getOrderDetail?orderNumber=${cjOrderNumber}`);
   }
 }
+
+export { CJDropshippingClient };
 
 export const cj = new CJDropshippingClient();

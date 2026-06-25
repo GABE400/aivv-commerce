@@ -3,11 +3,23 @@
 import { db } from "@/lib/db";
 import { products, productVariants, categories } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { cj } from "@/lib/cjdropshipping";
+import { getCJClientForUser } from "@/lib/suppliers/cj-helper";
 import { revalidatePath } from "next/cache";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export async function syncCJDropshippingCatalogAction() {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session || (session.user.role !== "business" && session.user.role !== "admin")) {
+    return { success: false, error: "Unauthorized" };
+  }
+
   try {
+    // Get CJ client for the current user
+    const cj = await getCJClientForUser(session.user.id);
     // 1. Ensure "Dropshipping" category exists
     let category = await db.query.categories.findFirst({
       where: eq(categories.slug, "dropshipping"),
@@ -112,15 +124,20 @@ export async function syncCJDropshippingCatalogAction() {
           });
 
           const sku = v.variantSku || v.sku || `CJ-${supplierProductId.slice(0, 6)}-${supplierVid}`;
-          const variantPrice = (v.variantSellPrice || v.sellPrice || v.price || 9.99).toString();
+          const basePrice = parseFloat(v.variantSellPrice || v.sellPrice || v.price || 9.99);
           const variantName = v.variantKey || v.variantNameEn || v.variantName || "Default Variant";
+
+          // Get product markup percentage
+          const productMarkup = existingProduct?.markupPercentage || 0;
+          const markedUpPrice = basePrice * (1 + productMarkup / 100);
+          const finalPrice = markedUpPrice.toFixed(2);
 
           if (existingVariant) {
             await db.update(productVariants)
               .set({
                 name: variantName,
                 sku: sku,
-                price: variantPrice,
+                price: finalPrice,
                 inventory: typeof v.stock === "number" ? v.stock : 999,
               })
               .where(eq(productVariants.id, existingVariant.id));
@@ -129,7 +146,7 @@ export async function syncCJDropshippingCatalogAction() {
               productId: productId,
               name: variantName,
               sku: sku,
-              price: variantPrice,
+              price: finalPrice,
               supplierVariantId: supplierVid,
               inventory: typeof v.stock === "number" ? v.stock : 999,
             });

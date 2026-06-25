@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { orders, users } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { RecentOrdersTable } from "@/components/admin/recent-orders-table";
+import { CjConnectionCard } from "@/components/admin/cj-connection-card";
 import Link from "next/link";
 
 export default async function AdminDashboard() {
@@ -33,6 +34,8 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-8">
+      <CjConnectionCard />
+      
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl glass border border-glass-border">
           <div className="text-sm font-medium text-muted-foreground uppercase mb-2">Total Revenue</div>
