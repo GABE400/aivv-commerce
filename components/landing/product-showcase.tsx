@@ -45,7 +45,10 @@ export async function ProductShowcase() {
           {allProducts.map((product) => {
             const prices = product.variants.map(v => parseFloat(v.price));
             const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-            
+            const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
+            const hasPriceRange = minPrice !== maxPrice;
+            const displayPrice = hasPriceRange ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}` : `$${minPrice.toFixed(2)}`;
+
             return (
               <Link 
                 key={product.id} 
@@ -97,7 +100,7 @@ export async function ProductShowcase() {
                   </div>
                   <h3 className="text-base md:text-lg font-bold group-hover:text-accent transition-colors duration-300 truncate text-foreground/90">{product.name}</h3>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-extrabold text-foreground">${minPrice.toFixed(2)}</span>
+                    <span className="text-xl font-extrabold text-foreground">{displayPrice}</span>
                     <span className="text-[10px] text-muted-foreground font-semibold">USD</span>
                   </div>
                 </div>

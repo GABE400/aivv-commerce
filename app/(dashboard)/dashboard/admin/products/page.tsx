@@ -15,6 +15,9 @@ export default async function AdminProductsPage() {
     orderBy: (products, { desc }) => [desc(products.createdAt)],
   });
 
+  console.log("AdminProductsPage: Total products:", allProducts.length);
+  console.log("AdminProductsPage: Products with supplierProductId:", allProducts.filter(p => p.supplierProductId).length);
+
 
   return (
     <div className="space-y-8">

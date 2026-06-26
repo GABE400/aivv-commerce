@@ -23,13 +23,19 @@ interface AddToCartFormProps {
     images: string[];
   };
   variants: any[];
+  onVariantChange?: (variantId: string) => void;
 }
 
-export function AddToCartForm({ product, variants }: AddToCartFormProps) {
+export function AddToCartForm({ product, variants, onVariantChange }: AddToCartFormProps) {
   const { addItem } = useCart();
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id || "");
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+
+  const handleVariantChange = (variantId: string) => {
+    setSelectedVariantId(variantId);
+    onVariantChange?.(variantId);
+  };
 
   const selectedVariant = variants.find(v => v.id === selectedVariantId);
 
@@ -66,7 +72,7 @@ export function AddToCartForm({ product, variants }: AddToCartFormProps) {
         {variants.length > 1 && (
           <div className="space-y-2">
             <Label className="text-xs uppercase font-bold tracking-widest text-muted-foreground">Select Option</Label>
-            <Select value={selectedVariantId} onValueChange={setSelectedVariantId}>
+            <Select value={selectedVariantId} onValueChange={handleVariantChange}>
               <SelectTrigger className="h-14 rounded-2xl glass border-glass-border">
                 <SelectValue placeholder="Select a variant" />
               </SelectTrigger>

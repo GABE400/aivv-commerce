@@ -99,6 +99,7 @@ export const productVariants = pgTable("product_variant", {
   inventory: integer("inventory").default(0), // Only for digital or tracked dropship
   supplierVariantId: text("supplierVariantId"), // External ID for Printify/Printful
   assetUrl: text("assetUrl"), // For digital products (ImageKit)
+  imageUrl: text("imageUrl"), // Variant-specific image URL
   metadata: text("metadata"), // JSON
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

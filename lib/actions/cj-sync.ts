@@ -103,8 +103,48 @@ export async function syncCJDropshippingCatalogAction() {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")}-${supplierProductId.slice(-4)}`;
 
-      const imageUrl = p.bigImage || p.productImage || p.image;
-      const imageUrls = imageUrl ? [imageUrl] : [];
+      // Handle multiple images from CJ
+      const mainImage = p.bigImage || p.productImage || p.image;
+      let imageUrls: string[] = [];
+
+      if (mainImage) {
+        imageUrls.push(mainImage);
+      }
+
+      // Log available image fields for debugging
+      console.log(`CJ Product ${supplierProductId} image fields:`, {
+        bigImage: p.bigImage,
+        productImage: p.productImage,
+        image: p.image,
+        productImageList: p.productImageList,
+        imageList: p.imageList,
+        images: p.images,
+        multiImage: p.multiImage,
+        allKeys: Object.keys(p).filter(k => k.toLowerCase().includes('image'))
+      });
+
+      // Check for additional images in different possible fields
+      if (p.productImageList && Array.isArray(p.productImageList)) {
+        imageUrls = imageUrls.concat(p.productImageList);
+      }
+      if (p.imageList && Array.isArray(p.imageList)) {
+        imageUrls = imageUrls.concat(p.imageList);
+      }
+      if (p.images && Array.isArray(p.images)) {
+        imageUrls = imageUrls.concat(p.images);
+      }
+      if (p.multiImage && Array.isArray(p.multiImage)) {
+        imageUrls = imageUrls.concat(p.multiImage);
+      }
+
+      // Remove duplicates
+      imageUrls = [...new Set(imageUrls)];
+
+      console.log(`CJ Product ${supplierProductId} final imageUrls:`, imageUrls);
+
+      if (imageUrls.length === 0) {
+        imageUrls = [];
+      }
 
       if (existingProduct) {
         await db
@@ -168,6 +208,10 @@ export async function syncCJDropshippingCatalogAction() {
             v.variantName ||
             "Default Variant";
 
+          // Check for variant-specific images
+          const variantImage = v.variantImage || v.image || v.bigImage;
+          console.log(`CJ Variant ${supplierVid} image:`, variantImage);
+
           // Get product markup percentage
           const productMarkup = existingProduct?.markupPercentage || 0;
           const markedUpPrice = costPrice * (1 + productMarkup / 100);
@@ -182,6 +226,7 @@ export async function syncCJDropshippingCatalogAction() {
                 price: finalPrice,
                 costPrice: costPrice.toFixed(2),
                 inventory: typeof v.stock === "number" ? v.stock : 999,
+                imageUrl: variantImage || null,
               })
               .where(eq(productVariants.id, existingVariant.id));
           } else {
@@ -193,6 +238,7 @@ export async function syncCJDropshippingCatalogAction() {
               costPrice: costPrice.toFixed(2),
               supplierVariantId: supplierVid,
               inventory: typeof v.stock === "number" ? v.stock : 999,
+              imageUrl: variantImage || null,
             });
           }
         }
