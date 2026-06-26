@@ -43,7 +43,7 @@ const variantSchema = z.object({
     .regex(/^\d+(\.\d{1,2})?$/)
     .optional()
     .or(z.literal("")),
-  markupPercentage: z.number().int().min(0).max(5000).default(0),
+  markupPercentage: z.number().int().min(0).max(5000),
   inventory: z.number().int().min(0).optional(),
   supplierVariantId: z.string().optional(),
   assetUrl: z.string().optional(),
