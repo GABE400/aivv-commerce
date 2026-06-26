@@ -7,13 +7,23 @@ import { printify } from "@/lib/printify";
 import { revalidatePath } from "next/cache";
 
 /**
- * Compute the final sell price for a variant.
+ * Printify variant fields:
+ *   price         – production cost in cents  (e.g. 1299 = $12.99)
+ *   retail_price  – the price the creator set in the Printify dashboard, also cents
+ *                   This is Printify's "profit range" value.
+ *                   profit = retail_price - price
  *
- * Priority:
- *   1. Per-variant markupPercentage (if > 0)
- *   2. Product-level markupPercentage (if > 0)
- *   3. No markup → sell price = cost price
+ * Strategy on first sync:
+ *   • costPrice  = price / 100          (what Printify charges us)
+ *   • retailPrice = retail_price / 100  (Printify's own suggested sell price — stored for reference)
+ *   • price (sell) = retail_price / 100 by default so profit is immediately visible
+ *
+ * On re-sync we preserve any sell price the admin already edited, only
+ * updating costPrice and retailPrice from Printify.
+ *
+ * If the admin has also set a markup percentage we apply that instead.
  */
+
 function applyMarkup(
   costPrice: number,
   variantMarkup: number,
@@ -25,7 +35,7 @@ function applyMarkup(
 
 export async function syncPrintifyCatalogAction() {
   try {
-    // 1. Ensure "Print-on-Demand" category exists (upsert-safe)
+    // 1. Ensure "Print-on-Demand" category exists
     let category = await db.query.categories.findFirst({
       where: eq(categories.slug, "print-on-demand"),
     });
@@ -42,18 +52,15 @@ export async function syncPrintifyCatalogAction() {
         .onConflictDoNothing()
         .returning();
 
-      if (!newCategory) {
-        category = await db.query.categories.findFirst({
+      category =
+        newCategory ??
+        (await db.query.categories.findFirst({
           where: eq(categories.slug, "print-on-demand"),
-        });
-      } else {
-        category = newCategory;
-      }
+        }));
     }
 
-    if (!category) {
+    if (!category)
       throw new Error("Failed to resolve Print-on-Demand category.");
-    }
 
     // 2. Fetch products from Printify
     const printifyData = await printify.getProducts();
@@ -63,13 +70,12 @@ export async function syncPrintifyCatalogAction() {
     let createdCount = 0;
 
     for (const p of printifyProducts) {
-      // Fetch existing product — include variants so we can preserve per-variant markups
       const existingProduct = await db.query.products.findFirst({
         where: eq(products.supplierProductId, p.id),
         with: { variants: true },
       });
 
-      // Preserve admin-set markup percentages on re-sync
+      // Never overwrite admin-set markup
       const productMarkup = existingProduct?.markupPercentage ?? 0;
 
       let productId: string;
@@ -89,7 +95,7 @@ export async function syncPrintifyCatalogAction() {
             slug: cleanSlug,
             description: p.description,
             images: p.images.map((img: any) => img.src),
-            // Do NOT overwrite markupPercentage — admin sets this manually
+            // markupPercentage intentionally NOT overwritten
             updatedAt: new Date(),
           })
           .where(eq(products.id, existingProduct.id));
@@ -106,15 +112,15 @@ export async function syncPrintifyCatalogAction() {
             categoryId: category.id,
             images: p.images.map((img: any) => img.src),
             supplierProductId: p.id,
-            markupPercentage: 0, // Admin sets this after first sync
+            markupPercentage: 0,
           })
           .returning();
         productId = newProduct.id;
         createdCount++;
       }
 
-      // 3. Sync variants — only enabled ones
-      const enabledVariants = p.variants.filter((v: any) => v.is_enabled);
+      // 3. Sync enabled variants
+      const enabledVariants = (p.variants as any[]).filter((v) => v.is_enabled);
 
       for (const v of enabledVariants) {
         const supplierVid = v.id.toString();
@@ -126,46 +132,67 @@ export async function syncPrintifyCatalogAction() {
           ),
         });
 
-        // Printify stores prices in cents
+        // Printify prices are in cents
         const costPrice = v.price / 100;
 
-        // Generate a unique SKU if Printify doesn't provide one
+        // retail_price is Printify's own suggested sell price — this IS the profit range
+        // It may be 0 if the creator never set a retail price in Printify dashboard
+        const printifyRetailPrice =
+          typeof v.retail_price === "number" && v.retail_price > 0
+            ? v.retail_price / 100
+            : null;
+
         const sku =
           v.sku && v.sku.trim() !== ""
             ? v.sku
             : `PFY-${p.id.slice(0, 6)}-${supplierVid}`;
 
         if (existingVariant) {
-          // Preserve per-variant markup set by admin
+          // Preserve admin markup
           const variantMarkup = existingVariant.markupPercentage ?? 0;
-          const finalPrice = applyMarkup(
-            costPrice,
-            variantMarkup,
-            productMarkup
-          );
+
+          // If admin set a markup, recompute sell price from cost
+          // Otherwise keep the existing price (admin may have manually edited it)
+          const hasAdminMarkup = variantMarkup > 0 || productMarkup > 0;
+          const newSellPrice = hasAdminMarkup
+            ? applyMarkup(costPrice, variantMarkup, productMarkup)
+            : existingVariant.price; // keep whatever admin set
 
           await db
             .update(productVariants)
             .set({
               name: v.title,
-              sku: sku,
-              price: finalPrice,
+              sku,
+              // Always refresh cost and Printify's retail price from the API
               costPrice: costPrice.toFixed(2),
+              retailPrice: printifyRetailPrice
+                ? printifyRetailPrice.toFixed(2)
+                : existingVariant.retailPrice,
+              price: newSellPrice,
               inventory: 999,
               // markupPercentage intentionally NOT overwritten
             })
             .where(eq(productVariants.id, existingVariant.id));
         } else {
-          // New variant — inherit product-level markup as default
-          const finalPrice = applyMarkup(costPrice, 0, productMarkup);
+          // New variant — use Printify's retail_price as the initial sell price
+          // so admin immediately sees the profit Printify recommends
+          const initialSellPrice =
+            productMarkup > 0
+              ? applyMarkup(costPrice, 0, productMarkup)
+              : printifyRetailPrice
+              ? printifyRetailPrice.toFixed(2)
+              : costPrice.toFixed(2); // fallback: no markup, cost = sell
 
           await db.insert(productVariants).values({
-            productId: productId,
+            productId,
             name: v.title,
-            sku: sku,
-            price: finalPrice,
+            sku,
+            price: initialSellPrice,
             costPrice: costPrice.toFixed(2),
-            markupPercentage: 0, // 0 = use product-level markup
+            retailPrice: printifyRetailPrice
+              ? printifyRetailPrice.toFixed(2)
+              : null,
+            markupPercentage: 0,
             supplierVariantId: supplierVid,
             inventory: 999,
           });

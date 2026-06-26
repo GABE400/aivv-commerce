@@ -162,7 +162,8 @@ export const productVariants = pgTable("product_variant", {
   name: text("name").notNull(), // color, size, etc
   sku: text("sku").notNull().unique(),
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
-  costPrice: decimal("costPrice", { precision: 10, scale: 2 }), // Supplier cost (what CJ charges us)
+  costPrice: decimal("costPrice", { precision: 10, scale: 2 }), // Supplier cost (what CJ/Printify charges us)
+  retailPrice: decimal("retailPrice", { precision: 10, scale: 2 }), // Supplier's suggested retail price (Printify retail_price)
   markupPercentage: integer("markupPercentage").default(0), // Per-variant override (0 = use product-level markup)
   inventory: integer("inventory").default(0), // Only for digital or tracked dropship
   supplierVariantId: text("supplierVariantId"), // External ID for Printify/Printful

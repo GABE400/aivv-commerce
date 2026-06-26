@@ -171,19 +171,57 @@ export function ProductsTable({ data }: ProductsTableProps) {
       header: "Profit Range",
       accessorKey: "variants",
       cell: (row: any) => {
-        const profits = row.variants
+        // For POD products, show Printify's suggested profit range (from retailPrice)
+        // For all products, show current sell price profit range
+        const isPOD = row.type === "pod";
+
+        const currentProfits = row.variants
           .filter((v: any) => v.costPrice && v.price)
           .map((v: any) => parseFloat(v.price) - parseFloat(v.costPrice));
-        if (profits.length === 0) return "-";
-        const minProfit = Math.min(...profits);
-        const maxProfit = Math.max(...profits);
+
+        const printifyProfits = isPOD
+          ? row.variants
+              .filter((v: any) => v.costPrice && v.retailPrice)
+              .map(
+                (v: any) => parseFloat(v.retailPrice) - parseFloat(v.costPrice)
+              )
+          : [];
+
+        if (currentProfits.length === 0)
+          return <span className="text-muted-foreground text-xs">—</span>;
+
+        const minP = Math.min(...currentProfits);
+        const maxP = Math.max(...currentProfits);
+        const currentLabel =
+          minP === maxP
+            ? `$${minP.toFixed(2)}`
+            : `$${minP.toFixed(2)} – $${maxP.toFixed(2)}`;
+
+        // Check if admin has deviated from Printify's suggested price
+        const hasPrintifyRange = printifyProfits.length > 0;
+        const minPP = hasPrintifyRange ? Math.min(...printifyProfits) : 0;
+        const maxPP = hasPrintifyRange ? Math.max(...printifyProfits) : 0;
+        const printifyLabel =
+          minPP === maxPP
+            ? `$${minPP.toFixed(2)}`
+            : `$${minPP.toFixed(2)} – $${maxPP.toFixed(2)}`;
+        const deviatesFromPrintify =
+          hasPrintifyRange && Math.abs(minP - minPP) > 0.005;
+
         return (
-          <span className="text-sm font-medium text-green-600">
-            $
-            {minProfit === maxProfit
-              ? minProfit.toFixed(2)
-              : `${minProfit.toFixed(2)} - ${maxProfit.toFixed(2)}`}
-          </span>
+          <div className="space-y-1">
+            <span className="text-sm font-medium text-emerald-500">
+              {currentLabel}
+            </span>
+            {hasPrintifyRange && deviatesFromPrintify && (
+              <p className="text-[10px] text-blue-400">
+                Printify: {printifyLabel}
+              </p>
+            )}
+            {hasPrintifyRange && !deviatesFromPrintify && (
+              <p className="text-[10px] text-muted-foreground">= Printify</p>
+            )}
+          </div>
         );
       },
     },

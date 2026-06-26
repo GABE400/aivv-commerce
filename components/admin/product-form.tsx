@@ -110,6 +110,7 @@ export function ProductForm({
       sku: v.sku,
       price: v.price,
       costPrice: v.costPrice || "",
+      retailPrice: v.retailPrice || "",
       markupPercentage: Number(v.markupPercentage ?? 0),
       inventory: v.inventory || 0,
       supplierVariantId: v.supplierVariantId || "",
@@ -120,10 +121,12 @@ export function ProductForm({
     ? buildDefaultVariants(initialData.variants)
     : [
         {
+          id: undefined,
           name: "Default",
           sku: "",
           price: "0.00",
           costPrice: "",
+          retailPrice: "",
           markupPercentage: 0,
           inventory: 0,
           supplierVariantId: "",
@@ -208,10 +211,12 @@ export function ProductForm({
     const newVariants = [
       ...variants,
       {
+        id: undefined,
         name: "",
         sku: "",
         price: "0.00",
         costPrice: "",
+        retailPrice: "",
         markupPercentage: 0,
         inventory: 0,
         supplierVariantId: "",
@@ -407,6 +412,22 @@ export function ProductForm({
                     ? variant.markupPercentage
                     : watchedProductMarkup;
 
+                // Printify's suggested retail price (stored from API)
+                const printifyRetail = parseFloat(variant.retailPrice);
+                const hasPrintifyRetail =
+                  !isNaN(printifyRetail) && printifyRetail > 0;
+                const printifyProfit =
+                  hasPrintifyRetail && !isNaN(cost) && cost > 0
+                    ? printifyRetail - cost
+                    : null;
+                const printifyProfitPct =
+                  printifyProfit !== null && printifyRetail > 0
+                    ? (printifyProfit / printifyRetail) * 100
+                    : null;
+                // Show hint only when the admin's sell price differs from Printify's suggestion
+                const sellPriceDiffersFromPrintify =
+                  hasPrintifyRetail && Math.abs(price - printifyRetail) > 0.005;
+
                 return (
                   <div
                     key={index}
@@ -528,6 +549,40 @@ export function ProductForm({
                             );
                           }}
                         />
+                        {/* Printify suggested retail price hint */}
+                        {hasPrintifyRetail && (
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[10px] text-muted-foreground">
+                              Printify:{" "}
+                              <span className="font-bold text-blue-400">
+                                ${printifyRetail.toFixed(2)}
+                              </span>
+                              {printifyProfitPct !== null && (
+                                <span className="ml-1 text-emerald-500">
+                                  (+${printifyProfit!.toFixed(2)} /{" "}
+                                  {printifyProfitPct.toFixed(0)}%)
+                                </span>
+                              )}
+                            </p>
+                            {sellPriceDiffersFromPrintify && (
+                              <button
+                                type="button"
+                                className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline underline-offset-2 shrink-0"
+                                onClick={() => {
+                                  const val = printifyRetail.toFixed(2);
+                                  form.setValue(`variants.${index}.price`, val);
+                                  setVariants((prev: any[]) =>
+                                    prev.map((v, i) =>
+                                      i === index ? { ...v, price: val } : v
+                                    )
+                                  );
+                                }}
+                              >
+                                Use
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -591,6 +646,18 @@ export function ProductForm({
                               markup)
                             </span>
                           </p>
+                          {/* Show comparison to Printify's suggested price */}
+                          {hasPrintifyRetail &&
+                            sellPriceDiffersFromPrintify && (
+                              <p className="text-[10px] text-muted-foreground mt-1 border-t border-glass-border pt-1">
+                                vs Printify suggested:&nbsp;
+                                <span className="text-blue-400 font-bold">
+                                  ${printifyRetail.toFixed(2)}
+                                </span>
+                                &nbsp;(+${printifyProfit!.toFixed(2)} /{" "}
+                                {printifyProfitPct!.toFixed(0)}%)
+                              </p>
+                            )}
                         </div>
                       )}
 
