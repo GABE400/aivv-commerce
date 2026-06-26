@@ -7,6 +7,60 @@ import { headers } from "next/headers";
 import { inArray, eq } from "drizzle-orm";
 import { paymentProvider } from "@/lib/payments/dodo";
 
+export async function getCartBreakdownAction(items: { variantId: string, quantity: number }[]) {
+  const session = await auth.api.getSession({
+    headers: await headers()
+  });
+
+  if (!session) {
+    return { success: false, error: "Please sign in." };
+  }
+
+  try {
+    const variantIds = items.map(i => i.variantId);
+
+    const dbVariants = await db.query.productVariants.findMany({
+      where: inArray(productVariants.id, variantIds),
+      with: {
+        product: true
+      }
+    });
+
+    if (dbVariants.length === 0) {
+      return { success: false, error: "No valid products found." };
+    }
+
+    let totalCJCost = 0;
+    let totalMarkup = 0;
+    let subtotal = 0;
+
+    items.forEach(cartItem => {
+      const variant = dbVariants.find(v => v.id === cartItem.variantId);
+      if (!variant) return;
+
+      const price = parseFloat(variant.price);
+      const costPrice = variant.costPrice ? parseFloat(variant.costPrice) : 0;
+      const markup = price - costPrice;
+
+      subtotal += price * cartItem.quantity;
+      totalCJCost += costPrice * cartItem.quantity;
+      totalMarkup += markup * cartItem.quantity;
+    });
+
+    return {
+      success: true,
+      breakdown: {
+        subtotal,
+        cjCost: totalCJCost,
+        markup: totalMarkup,
+      },
+    };
+  } catch (error: any) {
+    console.error("Cart Breakdown Error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
 export async function createCheckoutAction(items: { variantId: string, quantity: number }[]) {
   const session = await auth.api.getSession({
     headers: await headers()
@@ -31,19 +85,28 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
       throw new Error("No valid products found in cart.");
     }
 
-    // Calculate total
+    // Calculate total and breakdown
     let total = 0;
+    let totalCJCost = 0;
+    let totalMarkup = 0;
     const itemsToCreate = items.map(cartItem => {
       const variant = dbVariants.find(v => v.id === cartItem.variantId);
       if (!variant) throw new Error(`Variant ${cartItem.variantId} not found.`);
-      
+
       const price = parseFloat(variant.price);
+      const costPrice = variant.costPrice ? parseFloat(variant.costPrice) : 0;
+      const markup = price - costPrice;
+
       total += price * cartItem.quantity;
-      
+      totalCJCost += costPrice * cartItem.quantity;
+      totalMarkup += markup * cartItem.quantity;
+
       return {
         variantId: variant.id,
         quantity: cartItem.quantity,
         price: price.toString(),
+        costPrice: costPrice.toString(),
+        markup: markup.toString(),
         name: variant.product.name,
         variantName: variant.name,
         image: variant.product.images[0],
@@ -228,7 +291,17 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
       .set({ dodoCheckoutId: checkout.id })
       .where(eq(orders.id, newOrder.id));
 
-    return { success: true, url: checkout.url };
+    return {
+      success: true,
+      url: checkout.url,
+      breakdown: {
+        subtotal: total - shippingFee,
+        shipping: shippingFee,
+        cjCost: totalCJCost,
+        markup: totalMarkup,
+        total: total,
+      },
+    };
   } catch (error: any) {
     console.error("Checkout Error:", error);
     return { success: false, error: error.message };

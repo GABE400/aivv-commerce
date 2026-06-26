@@ -16,7 +16,7 @@ import Image from "next/image";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
 import { useState, useTransition, useEffect } from "react";
-import { createCheckoutAction } from "@/lib/actions/checkout";
+import { createCheckoutAction, getCartBreakdownAction } from "@/lib/actions/checkout";
 import { toast } from "sonner";
 
 export function CartDrawer() {
@@ -24,10 +24,26 @@ export function CartDrawer() {
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [mounted, setMounted] = useState(false);
+  const [breakdown, setBreakdown] = useState<{ cjCost: number; markup: number } | null>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (items.length > 0) {
+      startTransition(async () => {
+        const result = await getCartBreakdownAction(
+          items.map(i => ({ variantId: i.variantId, quantity: i.quantity }))
+        );
+        if (result.success && result.breakdown) {
+          setBreakdown(result.breakdown);
+        }
+      });
+    } else {
+      setBreakdown(null);
+    }
+  }, [items]);
 
   const handleCheckout = () => {
     startTransition(async () => {
@@ -121,6 +137,18 @@ export function CartDrawer() {
                   <span className="text-muted-foreground">Subtotal</span>
                   <span className="font-bold text-foreground">${getTotal().toFixed(2)}</span>
                 </div>
+                {breakdown && (
+                  <>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>• Product Cost</span>
+                      <span>${breakdown.cjCost.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>• Your Markup</span>
+                      <span className="text-emerald-500">+${breakdown.markup.toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Shipping</span>
                   <span className="text-emerald-500 font-bold uppercase text-[10px]">Calculated at checkout</span>
