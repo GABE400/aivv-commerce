@@ -116,6 +116,7 @@ export async function syncPrintifyCatalogAction() {
                         name: v.title,
                         sku: sku,
                         price: (v.price / 100).toString(),
+                        costPrice: (v.price / 100).toString(),
                         inventory: 999,
                     })
                     .where(eq(productVariants.id, existingVariant.id));
@@ -125,6 +126,7 @@ export async function syncPrintifyCatalogAction() {
                     name: v.title,
                     sku: sku,
                     price: (v.price / 100).toString(),
+                    costPrice: (v.price / 100).toString(),
                     supplierVariantId: supplierVid,
                     inventory: 999,
                 });

@@ -49,7 +49,7 @@ export async function createProductAction(data: any) {
           inventory: v.inventory || 0,
           supplierVariantId: v.supplierVariantId,
           assetUrl: v.assetUrl,
-        })),
+        }))
       );
     }
 
@@ -142,7 +142,7 @@ export async function updateProductAction(productId: string, data: any) {
 
     // 4. Check which variants to delete (current but not in incoming, and not referenced by any order items)
     const variantsToCheck = currentVariants.filter(
-      (v) => !incomingVariantIds.has(v.id),
+      (v) => !incomingVariantIds.has(v.id)
     );
 
     for (const variant of variantsToCheck) {
@@ -203,6 +203,12 @@ export async function deleteProductAction(productId: string) {
           updatedAt: new Date(),
         })
         .where(eq(products.id, productId));
+
+      // Also revalidate the product's public page if it has a slug
+      const product = await db.query.products.findFirst({
+        where: eq(products.id, productId),
+      });
+      if (product?.slug) revalidatePath(`/products/${product.slug}`);
 
       revalidatePath("/dashboard/admin/products");
       return {
