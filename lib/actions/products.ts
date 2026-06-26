@@ -74,6 +74,7 @@ export async function updateProductAction(productId: string, data: any) {
   }
 
   try {
+    console.log("Updating product with data:", JSON.stringify(data, null, 2));
     // 1. Update Product
     await db
       .update(products)
@@ -90,14 +91,43 @@ export async function updateProductAction(productId: string, data: any) {
       })
       .where(eq(products.id, productId));
 
-    // 2. Delete existing variants and re-insert
-    await db
-      .delete(productVariants)
-      .where(eq(productVariants.productId, productId));
+    // 2. Fetch current variants
+    const currentVariants = await db.query.productVariants.findMany({
+      where: eq(productVariants.productId, productId),
+    });
 
-    if (data.variants && data.variants.length > 0) {
-      await db.insert(productVariants).values(
-        data.variants.map((v: any) => ({
+    // 3. Process incoming variants
+    const incomingVariantIds = new Set<string>();
+
+    for (const v of data.variants) {
+      // Check if variant exists by ID first
+      let existingVariant = v.id
+        ? currentVariants.find((cv) => cv.id === v.id)
+        : null;
+
+      // If no ID, check by SKU for existing variant in this product
+      if (!existingVariant) {
+        existingVariant = currentVariants.find((cv) => cv.sku === v.sku);
+      }
+
+      if (existingVariant) {
+        // Update existing variant
+        await db
+          .update(productVariants)
+          .set({
+            name: v.name,
+            sku: v.sku,
+            price: v.price,
+            costPrice: v.costPrice || null,
+            inventory: v.inventory || 0,
+            supplierVariantId: v.supplierVariantId,
+            assetUrl: v.assetUrl,
+          })
+          .where(eq(productVariants.id, existingVariant.id));
+        incomingVariantIds.add(existingVariant.id);
+      } else {
+        // Insert new variant
+        await db.insert(productVariants).values({
           productId: productId,
           name: v.name,
           sku: v.sku,
@@ -106,8 +136,25 @@ export async function updateProductAction(productId: string, data: any) {
           inventory: v.inventory || 0,
           supplierVariantId: v.supplierVariantId,
           assetUrl: v.assetUrl,
-        })),
-      );
+        });
+      }
+    }
+
+    // 4. Check which variants to delete (current but not in incoming, and not referenced by any order items)
+    const variantsToCheck = currentVariants.filter(
+      (v) => !incomingVariantIds.has(v.id),
+    );
+
+    for (const variant of variantsToCheck) {
+      const hasOrders = await db.query.orderItems.findFirst({
+        where: eq(orderItems.variantId, variant.id),
+      });
+
+      if (!hasOrders) {
+        await db
+          .delete(productVariants)
+          .where(eq(productVariants.id, variant.id));
+      }
     }
 
     revalidatePath("/dashboard/admin/products");

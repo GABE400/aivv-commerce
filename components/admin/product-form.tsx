@@ -35,6 +35,7 @@ const productSchema = z.object({
   variants: z
     .array(
       z.object({
+        id: z.string().optional(),
         name: z.string().min(1, "Variant name is required"),
         sku: z.string().min(1, "SKU is required"),
         price: z.string().regex(/^\d+(\.\d{1,2})?$/, "Invalid price format"),
@@ -80,6 +81,7 @@ export function ProductForm({
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const defaultVariants = initialData?.variants?.map((v: any) => ({
+    id: v.id,
     name: v.name,
     sku: v.sku,
     price: v.price,
@@ -121,7 +123,18 @@ export function ProductForm({
   };
 
   const addVariant = () => {
-    const newVariants = [...variants, { name: "", sku: "", price: "0.00" }];
+    const newVariants = [
+      ...variants,
+      {
+        name: "",
+        sku: "",
+        price: "0.00",
+        costPrice: "",
+        inventory: 0,
+        supplierVariantId: "",
+        assetUrl: "",
+      },
+    ];
     setVariants(newVariants);
     form.setValue("variants", newVariants);
   };
@@ -275,6 +288,11 @@ export function ProductForm({
                   key={index}
                   className="grid grid-cols-1 md:grid-cols-4 gap-4 p-4 rounded-xl bg-muted/30 border border-glass-border relative"
                 >
+                  <input
+                    type="hidden"
+                    {...form.register(`variants.${index}.id` as const)}
+                    value={variants[index].id || ""}
+                  />
                   <div className="space-y-2">
                     <Label className="text-[10px] uppercase font-bold text-muted-foreground">
                       Name
