@@ -31,7 +31,7 @@ const productSchema = z.object({
   type: z.enum(["dropship", "pod", "digital", "subscription"]),
   categoryId: z.string().uuid("Please select a category"),
   supplierId: z.string().optional(),
-  markupPercentage: z.number().int().min(0).max(100),
+  markupPercentage: z.number().int().min(0).max(5000),
   variants: z
     .array(
       z.object({
@@ -454,7 +454,7 @@ export function ProductForm({
                   id="markupPercentage"
                   type="number"
                   min="0"
-                  max="100"
+                  max="5000"
                   {...form.register("markupPercentage", {
                     valueAsNumber: true,
                   })}
@@ -462,7 +462,7 @@ export function ProductForm({
                   className="glass border-glass-border"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Profit margin added to supplier price (0-100%)
+                  Profit margin added to supplier price (0-5000%)
                 </p>
                 {form.formState.errors.markupPercentage && (
                   <p className="text-xs text-red-500">
