@@ -24,21 +24,28 @@ interface ProductPageClientProps {
 }
 
 export function ProductPageClient({ productData }: ProductPageClientProps) {
-  const [selectedVariantId, setSelectedVariantId] = useState(productData.variants[0]?.id || "");
+  const [selectedVariantId, setSelectedVariantId] = useState(
+    productData.variants[0]?.id || ""
+  );
 
   const variantImages = productData.variants
-    .filter(v => v.imageUrl)
-    .map(v => ({
+    .filter((v) => v.imageUrl)
+    .map((v) => ({
       variantId: v.id,
-      imageUrl: v.imageUrl!
+      imageUrl: v.imageUrl!,
     }));
 
   // Calculate price range
-  const prices = productData.variants.map(v => parseFloat(v.price));
-  const minPrice = Math.min(...prices);
-  const maxPrice = Math.max(...prices);
+  const prices = productData.variants.map((v) => parseFloat(v.price));
+  const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
+  const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
   const hasPriceRange = minPrice !== maxPrice;
-  const displayPrice = hasPriceRange ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}` : `$${minPrice.toFixed(2)}`;
+  const displayPrice =
+    prices.length === 0
+      ? "Price unavailable"
+      : hasPriceRange
+      ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
+      : `$${minPrice.toFixed(2)}`;
 
   return (
     <div className="grid lg:grid-cols-2 gap-12 lg:gap-24">
@@ -82,14 +89,22 @@ export function ProductPageClient({ productData }: ProductPageClientProps) {
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-8">
-           <div className="p-4 rounded-xl bg-muted/50 border border-glass-border space-y-1">
-              <div className="text-[10px] text-muted-foreground uppercase font-bold">Fulfillment</div>
-              <div className="text-sm font-semibold text-foreground">Global Priority</div>
-           </div>
-           <div className="p-4 rounded-xl bg-muted/50 border border-glass-border space-y-1">
-              <div className="text-[10px] text-muted-foreground uppercase font-bold">Shipping</div>
-              <div className="text-sm font-semibold text-foreground">2-5 Business Days</div>
-           </div>
+          <div className="p-4 rounded-xl bg-muted/50 border border-glass-border space-y-1">
+            <div className="text-[10px] text-muted-foreground uppercase font-bold">
+              Fulfillment
+            </div>
+            <div className="text-sm font-semibold text-foreground">
+              Global Priority
+            </div>
+          </div>
+          <div className="p-4 rounded-xl bg-muted/50 border border-glass-border space-y-1">
+            <div className="text-[10px] text-muted-foreground uppercase font-bold">
+              Shipping
+            </div>
+            <div className="text-sm font-semibold text-foreground">
+              2-5 Business Days
+            </div>
+          </div>
         </div>
       </div>
     </div>

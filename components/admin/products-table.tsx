@@ -34,7 +34,7 @@ export function ProductsTable({ data }: ProductsTableProps) {
         const res = (await deleteProductAction(productId)) as any;
         if (res.success) {
           toast.success(
-            res.message || `Successfully processed ${productName}.`,
+            res.message || `Successfully processed ${productName}.`
           );
           router.refresh();
         } else {
@@ -209,28 +209,15 @@ export function ProductsTable({ data }: ProductsTableProps) {
       accessorKey: "id",
       cell: (row: any) => (
         <div className="flex items-center gap-2">
-          {row.supplierProductId ? (
-            <Link href={`/dashboard/admin/products/${row.id}`}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 h-8 w-8 hover:bg-accent/10 hover:text-accent"
-              >
-                <Edit2 className="size-3.5" />
-              </Button>
-            </Link>
-          ) : (
-            <div title="Local products cannot be customized">
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled
-                className="size-8 h-8 w-8 opacity-20 cursor-not-allowed"
-              >
-                <Edit2 className="size-3.5" />
-              </Button>
-            </div>
-          )}
+          <Link href={`/dashboard/admin/products/${row.id}`}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 h-8 w-8 hover:bg-accent/10 hover:text-accent"
+            >
+              <Edit2 className="size-3.5" />
+            </Button>
+          </Link>
           {!row.isActive ? (
             <Button
               variant="ghost"

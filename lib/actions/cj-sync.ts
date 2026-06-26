@@ -9,6 +9,23 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
+/**
+ * Compute the final sell price for a variant.
+ *
+ * Priority:
+ *   1. Per-variant markupPercentage (if > 0)
+ *   2. Product-level markupPercentage (if > 0)
+ *   3. No markup → sell price = cost price
+ */
+function applyMarkup(
+  costPrice: number,
+  variantMarkup: number,
+  productMarkup: number
+): string {
+  const markup = variantMarkup > 0 ? variantMarkup : productMarkup;
+  return (costPrice * (1 + markup / 100)).toFixed(2);
+}
+
 export async function syncCJDropshippingCatalogAction() {
   console.log("syncCJDropshippingCatalogAction called");
   const session = await auth.api.getSession({
@@ -27,6 +44,7 @@ export async function syncCJDropshippingCatalogAction() {
     const cj = await getCJClientForUser(session.user.id);
     const shopId = await ensureCJShopId(session.user.id, cj);
     console.log("syncCJDropshippingCatalogAction: shopId obtained:", shopId);
+
     // 1. Ensure "Dropshipping" category exists
     let category = await db.query.categories.findFirst({
       where: eq(categories.slug, "dropshipping"),
@@ -62,8 +80,9 @@ export async function syncCJDropshippingCatalogAction() {
     const cjData = await cj.getProducts({ page: 1, size: 10 });
     console.log(
       "syncCJDropshippingCatalogAction: getProducts response:",
-      JSON.stringify(cjData, null, 2),
+      JSON.stringify(cjData, null, 2)
     );
+
     const cjProductsList =
       (Array.isArray(cjData.data?.content) ? cjData.data.content : null) ||
       (Array.isArray(cjData.result?.content) ? cjData.result.content : null) ||
@@ -74,9 +93,10 @@ export async function syncCJDropshippingCatalogAction() {
       cjData.data?.list ||
       cjData.result?.list ||
       [];
+
     console.log(
       "syncCJDropshippingCatalogAction: cjProductsList length:",
-      cjProductsList.length,
+      cjProductsList.length
     );
 
     let updatedCount = 0;
@@ -87,10 +107,14 @@ export async function syncCJDropshippingCatalogAction() {
       const supplierProductId = p.productId || p.id;
       if (!supplierProductId) continue;
 
-      // Check if product already exists
+      // Check if product already exists — fetch with variants so we preserve markups
       const existingProduct = await db.query.products.findFirst({
         where: eq(products.supplierProductId, supplierProductId),
+        with: { variants: true },
       });
+
+      // Preserve admin-set markup percentages on re-sync
+      const productMarkup = existingProduct?.markupPercentage ?? 0;
 
       let productId: string;
       const productName =
@@ -103,27 +127,10 @@ export async function syncCJDropshippingCatalogAction() {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")}-${supplierProductId.slice(-4)}`;
 
-      // Handle multiple images from CJ
+      // Collect product images
       const mainImage = p.bigImage || p.productImage || p.image;
-      let imageUrls: string[] = [];
+      let imageUrls: string[] = mainImage ? [mainImage] : [];
 
-      if (mainImage) {
-        imageUrls.push(mainImage);
-      }
-
-      // Log available image fields for debugging
-      console.log(`CJ Product ${supplierProductId} image fields:`, {
-        bigImage: p.bigImage,
-        productImage: p.productImage,
-        image: p.image,
-        productImageList: p.productImageList,
-        imageList: p.imageList,
-        images: p.images,
-        multiImage: p.multiImage,
-        allKeys: Object.keys(p).filter(k => k.toLowerCase().includes('image'))
-      });
-
-      // Check for additional images in different possible fields
       if (p.productImageList && Array.isArray(p.productImageList)) {
         imageUrls = imageUrls.concat(p.productImageList);
       }
@@ -136,17 +143,10 @@ export async function syncCJDropshippingCatalogAction() {
       if (p.multiImage && Array.isArray(p.multiImage)) {
         imageUrls = imageUrls.concat(p.multiImage);
       }
-
-      // Remove duplicates
       imageUrls = [...new Set(imageUrls)];
 
-      console.log(`CJ Product ${supplierProductId} final imageUrls:`, imageUrls);
-
-      if (imageUrls.length === 0) {
-        imageUrls = [];
-      }
-
       if (existingProduct) {
+        // Preserve name/description if CJ sends nothing useful
         await db
           .update(products)
           .set({
@@ -156,7 +156,8 @@ export async function syncCJDropshippingCatalogAction() {
               p.description ||
               existingProduct.description ||
               "CJ Dropshipping product.",
-            images: imageUrls,
+            images: imageUrls.length > 0 ? imageUrls : existingProduct.images,
+            // Do NOT overwrite markupPercentage — admin sets this manually
             updatedAt: new Date(),
           })
           .where(eq(products.id, existingProduct.id));
@@ -173,13 +174,14 @@ export async function syncCJDropshippingCatalogAction() {
             categoryId: category.id,
             images: imageUrls,
             supplierProductId: supplierProductId,
+            markupPercentage: 0, // Admin sets this after first sync
           })
           .returning();
         productId = newProduct.id;
         createdCount++;
       }
 
-      // 3. Fetch variants for this product
+      // 3. Sync variants
       try {
         const variantData = await cj.getVariants(supplierProductId);
         const variants = variantData.data || variantData.result || [];
@@ -191,7 +193,7 @@ export async function syncCJDropshippingCatalogAction() {
           const existingVariant = await db.query.productVariants.findFirst({
             where: and(
               eq(productVariants.productId, productId),
-              eq(productVariants.supplierVariantId, supplierVid),
+              eq(productVariants.supplierVariantId, supplierVid)
             ),
           });
 
@@ -199,25 +201,28 @@ export async function syncCJDropshippingCatalogAction() {
             v.variantSku ||
             v.sku ||
             `CJ-${supplierProductId.slice(0, 6)}-${supplierVid}`;
+
           const costPrice = parseFloat(
-            v.variantSellPrice || v.sellPrice || v.price || 9.99,
+            v.variantSellPrice || v.sellPrice || v.price || "9.99"
           );
+
           const variantName =
             v.variantKey ||
             v.variantNameEn ||
             v.variantName ||
             "Default Variant";
 
-          // Check for variant-specific images
-          const variantImage = v.variantImage || v.image || v.bigImage;
-          console.log(`CJ Variant ${supplierVid} image:`, variantImage);
-
-          // Get product markup percentage
-          const productMarkup = existingProduct?.markupPercentage || 0;
-          const markedUpPrice = costPrice * (1 + productMarkup / 100);
-          const finalPrice = markedUpPrice.toFixed(2);
+          const variantImage = v.variantImage || v.image || v.bigImage || null;
 
           if (existingVariant) {
+            // Preserve per-variant markup set by admin
+            const variantMarkup = existingVariant.markupPercentage ?? 0;
+            const finalPrice = applyMarkup(
+              costPrice,
+              variantMarkup,
+              productMarkup
+            );
+
             await db
               .update(productVariants)
               .set({
@@ -226,30 +231,35 @@ export async function syncCJDropshippingCatalogAction() {
                 price: finalPrice,
                 costPrice: costPrice.toFixed(2),
                 inventory: typeof v.stock === "number" ? v.stock : 999,
-                imageUrl: variantImage || null,
+                imageUrl: variantImage,
+                // markupPercentage is intentionally NOT overwritten — admin controls it
               })
               .where(eq(productVariants.id, existingVariant.id));
           } else {
+            // New variant — inherit product-level markup as default
+            const finalPrice = applyMarkup(costPrice, 0, productMarkup);
+
             await db.insert(productVariants).values({
               productId: productId,
               name: variantName,
               sku: sku,
               price: finalPrice,
               costPrice: costPrice.toFixed(2),
+              markupPercentage: 0, // 0 = use product-level markup
               supplierVariantId: supplierVid,
               inventory: typeof v.stock === "number" ? v.stock : 999,
-              imageUrl: variantImage || null,
+              imageUrl: variantImage,
             });
           }
         }
       } catch (variantErr) {
         console.error(
           `Failed to sync variants for CJ product ${supplierProductId}:`,
-          variantErr,
+          variantErr
         );
       }
 
-      // 4. Register product with CJ shop so it appears in My Products store filter
+      // 4. Register product with CJ shop
       const syncedProduct = await db.query.products.findFirst({
         where: eq(products.id, productId),
         with: { variants: true },
@@ -277,7 +287,7 @@ export async function syncCJDropshippingCatalogAction() {
               images: syncedProduct.images,
             },
             supplierProductId,
-            linkableVariants,
+            linkableVariants
           );
           if (linkResult.linked) linkedCount++;
         }

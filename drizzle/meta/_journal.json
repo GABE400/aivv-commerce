@@ -15,6 +15,20 @@
       "when": 1782422618638,
       "tag": "0001_strong_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782499942069,
+      "tag": "0002_add_variant_markup_percentage",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1782500000000,
+      "tag": "0002_add_variant_markup_percentage",
+      "breakpoints": true
     }
   ]
 }

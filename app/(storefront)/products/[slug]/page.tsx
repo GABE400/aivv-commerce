@@ -1,24 +1,28 @@
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
 import { Navbar } from "@/components/landing/navbar";
 import { Footer } from "@/components/landing/footer";
 import { ProductPageClient } from "./product-page-client";
 
-export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function ProductPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const { slug } = await params;
 
   const productData = await db.query.products.findFirst({
-    where: eq(products.slug, slug),
+    where: and(eq(products.slug, slug), eq(products.isActive, true)),
     with: {
       variants: true,
       category: true,
     },
   });
 
-  if (!productData) {
+  if (!productData || productData.variants.length === 0) {
     notFound();
   }
 
