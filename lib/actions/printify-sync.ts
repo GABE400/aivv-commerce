@@ -70,6 +70,16 @@ export async function syncPrintifyCatalogAction() {
     let createdCount = 0;
 
     for (const p of printifyProducts) {
+      // Fetch the full product detail — the list endpoint omits retail_price on variants,
+      // it only comes back on the individual product endpoint.
+      let fullProduct: any;
+      try {
+        fullProduct = await printify.getProduct(p.id);
+      } catch {
+        // If single-product fetch fails, fall back to list data
+        fullProduct = p;
+      }
+
       const existingProduct = await db.query.products.findFirst({
         where: eq(products.supplierProductId, p.id),
         with: { variants: true },
@@ -80,7 +90,7 @@ export async function syncPrintifyCatalogAction() {
 
       let productId: string;
 
-      const cleanSlug = `${p.title
+      const cleanSlug = `${fullProduct.title
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
         .replace(/\s+/g, "-")
@@ -91,10 +101,10 @@ export async function syncPrintifyCatalogAction() {
         await db
           .update(products)
           .set({
-            name: p.title,
+            name: fullProduct.title,
             slug: cleanSlug,
-            description: p.description,
-            images: p.images.map((img: any) => img.src),
+            description: fullProduct.description,
+            images: fullProduct.images.map((img: any) => img.src),
             // markupPercentage intentionally NOT overwritten
             updatedAt: new Date(),
           })
@@ -105,12 +115,12 @@ export async function syncPrintifyCatalogAction() {
         const [newProduct] = await db
           .insert(products)
           .values({
-            name: p.title,
+            name: fullProduct.title,
             slug: cleanSlug,
-            description: p.description,
+            description: fullProduct.description,
             type: "pod",
             categoryId: category.id,
-            images: p.images.map((img: any) => img.src),
+            images: fullProduct.images.map((img: any) => img.src),
             supplierProductId: p.id,
             markupPercentage: 0,
           })
@@ -119,8 +129,10 @@ export async function syncPrintifyCatalogAction() {
         createdCount++;
       }
 
-      // 3. Sync enabled variants
-      const enabledVariants = (p.variants as any[]).filter((v) => v.is_enabled);
+      // 3. Sync enabled variants — fullProduct has retail_price per variant
+      const enabledVariants = (fullProduct.variants as any[]).filter(
+        (v) => v.is_enabled
+      );
 
       for (const v of enabledVariants) {
         const supplierVid = v.id.toString();
@@ -135,12 +147,22 @@ export async function syncPrintifyCatalogAction() {
         // Printify prices are in cents
         const costPrice = v.price / 100;
 
-        // retail_price is Printify's own suggested sell price — this IS the profit range
-        // It may be 0 if the creator never set a retail price in Printify dashboard
+        // retail_price is only set when the creator explicitly configured it in
+        // the Printify dashboard. Many accounts never set it, so it may be absent
+        // or 0. We try it first, then fall back to a default 40% markup which is
+        // Printify's own recommended minimum for a sustainable POD business.
+        const DEFAULT_POD_MARKUP = 40; // %
+
         const printifyRetailPrice =
           typeof v.retail_price === "number" && v.retail_price > 0
             ? v.retail_price / 100
             : null;
+
+        // The "suggested" sell price: Printify's retail_price if set, otherwise
+        // cost + 40% — this is what we store as retailPrice for reference.
+        const suggestedRetailPrice = printifyRetailPrice
+          ? printifyRetailPrice
+          : costPrice * (1 + DEFAULT_POD_MARKUP / 100);
 
         const sku =
           v.sku && v.sku.trim() !== ""
@@ -148,40 +170,32 @@ export async function syncPrintifyCatalogAction() {
             : `PFY-${p.id.slice(0, 6)}-${supplierVid}`;
 
         if (existingVariant) {
-          // Preserve admin markup
+          // Preserve admin markup — recompute sell price only if markup is set,
+          // otherwise keep whatever sell price the admin already has.
           const variantMarkup = existingVariant.markupPercentage ?? 0;
-
-          // If admin set a markup, recompute sell price from cost
-          // Otherwise keep the existing price (admin may have manually edited it)
           const hasAdminMarkup = variantMarkup > 0 || productMarkup > 0;
           const newSellPrice = hasAdminMarkup
             ? applyMarkup(costPrice, variantMarkup, productMarkup)
-            : existingVariant.price; // keep whatever admin set
+            : existingVariant.price;
 
           await db
             .update(productVariants)
             .set({
               name: v.title,
               sku,
-              // Always refresh cost and Printify's retail price from the API
               costPrice: costPrice.toFixed(2),
-              retailPrice: printifyRetailPrice
-                ? printifyRetailPrice.toFixed(2)
-                : existingVariant.retailPrice,
+              retailPrice: suggestedRetailPrice.toFixed(2),
               price: newSellPrice,
               inventory: 999,
-              // markupPercentage intentionally NOT overwritten
             })
             .where(eq(productVariants.id, existingVariant.id));
         } else {
-          // New variant — use Printify's retail_price as the initial sell price
-          // so admin immediately sees the profit Printify recommends
+          // New variant — use suggested retail price as the initial sell price
+          // so profit is visible immediately without the admin having to do anything.
           const initialSellPrice =
             productMarkup > 0
               ? applyMarkup(costPrice, 0, productMarkup)
-              : printifyRetailPrice
-              ? printifyRetailPrice.toFixed(2)
-              : costPrice.toFixed(2); // fallback: no markup, cost = sell
+              : suggestedRetailPrice.toFixed(2);
 
           await db.insert(productVariants).values({
             productId,
@@ -189,9 +203,7 @@ export async function syncPrintifyCatalogAction() {
             sku,
             price: initialSellPrice,
             costPrice: costPrice.toFixed(2),
-            retailPrice: printifyRetailPrice
-              ? printifyRetailPrice.toFixed(2)
-              : null,
+            retailPrice: suggestedRetailPrice.toFixed(2),
             markupPercentage: 0,
             supplierVariantId: supplierVid,
             inventory: 999,

@@ -171,55 +171,58 @@ export function ProductsTable({ data }: ProductsTableProps) {
       header: "Profit Range",
       accessorKey: "variants",
       cell: (row: any) => {
-        // For POD products, show Printify's suggested profit range (from retailPrice)
-        // For all products, show current sell price profit range
         const isPOD = row.type === "pod";
 
-        const currentProfits = row.variants
-          .filter((v: any) => v.costPrice && v.price)
-          .map((v: any) => parseFloat(v.price) - parseFloat(v.costPrice));
+        // For POD: profit = retailPrice (suggested sell at 40% markup) - costPrice
+        // For all others: profit = price (actual sell) - costPrice
+        const profits = row.variants
+          .filter((v: any) => {
+            if (!v.costPrice) return false;
+            return isPOD ? v.retailPrice || v.price : v.price;
+          })
+          .map((v: any) => {
+            const cost = parseFloat(v.costPrice);
+            const sell = isPOD
+              ? parseFloat(v.retailPrice ?? v.price)
+              : parseFloat(v.price);
+            return sell - cost;
+          })
+          .filter((p: number) => !isNaN(p));
 
-        const printifyProfits = isPOD
-          ? row.variants
-              .filter((v: any) => v.costPrice && v.retailPrice)
-              .map(
-                (v: any) => parseFloat(v.retailPrice) - parseFloat(v.costPrice)
-              )
-          : [];
-
-        if (currentProfits.length === 0)
+        if (profits.length === 0)
           return <span className="text-muted-foreground text-xs">—</span>;
 
-        const minP = Math.min(...currentProfits);
-        const maxP = Math.max(...currentProfits);
-        const currentLabel =
+        const minP = Math.min(...profits);
+        const maxP = Math.max(...profits);
+        const label =
           minP === maxP
             ? `$${minP.toFixed(2)}`
             : `$${minP.toFixed(2)} – $${maxP.toFixed(2)}`;
 
-        // Check if admin has deviated from Printify's suggested price
-        const hasPrintifyRange = printifyProfits.length > 0;
-        const minPP = hasPrintifyRange ? Math.min(...printifyProfits) : 0;
-        const maxPP = hasPrintifyRange ? Math.max(...printifyProfits) : 0;
-        const printifyLabel =
-          minPP === maxPP
-            ? `$${minPP.toFixed(2)}`
-            : `$${minPP.toFixed(2)} – $${maxPP.toFixed(2)}`;
-        const deviatesFromPrintify =
-          hasPrintifyRange && Math.abs(minP - minPP) > 0.005;
+        // Show if admin's actual sell price differs from suggested retail
+        const currentProfits = isPOD
+          ? row.variants
+              .filter((v: any) => v.costPrice && v.price)
+              .map((v: any) => parseFloat(v.price) - parseFloat(v.costPrice))
+          : [];
+        const minCurrent = currentProfits.length
+          ? Math.min(...currentProfits)
+          : null;
+        const hasDeviation =
+          minCurrent !== null && Math.abs(minCurrent - minP) > 0.005;
 
         return (
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             <span className="text-sm font-medium text-emerald-500">
-              {currentLabel}
+              {label}
             </span>
-            {hasPrintifyRange && deviatesFromPrintify && (
-              <p className="text-[10px] text-blue-400">
-                Printify: {printifyLabel}
-              </p>
+            {isPOD && !hasDeviation && (
+              <p className="text-[10px] text-muted-foreground">40% default</p>
             )}
-            {hasPrintifyRange && !deviatesFromPrintify && (
-              <p className="text-[10px] text-muted-foreground">= Printify</p>
+            {isPOD && hasDeviation && minCurrent !== null && (
+              <p className="text-[10px] text-blue-400">
+                Selling: ${minCurrent.toFixed(2)}
+              </p>
             )}
           </div>
         );

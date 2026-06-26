@@ -1,5 +1,3 @@
-
-
 const PRINTIFY_BASE_URL = "https://api.printify.com/v1";
 
 interface CreateOrderParams {
@@ -48,7 +46,9 @@ class PrintifyClient {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(`Printify API error: ${error.message || JSON.stringify(error)}`);
+      throw new Error(
+        `Printify API error: ${error.message || JSON.stringify(error)}`
+      );
     }
 
     return response.json();
@@ -58,7 +58,7 @@ class PrintifyClient {
     const payload = {
       external_id: params.externalId,
       label: "Aivv Order",
-      line_items: params.lineItems.map(item => ({
+      line_items: params.lineItems.map((item) => ({
         product_id: item.productId,
         variant_id: item.variantId,
         quantity: item.quantity,
@@ -93,6 +93,12 @@ class PrintifyClient {
     return this.fetchPrintify(`/shops/${this.shopId}/products.json`);
   }
 
+  async getProduct(productId: string) {
+    return this.fetchPrintify(
+      `/shops/${this.shopId}/products/${productId}.json`
+    );
+  }
+
   async calculateShippingRates(params: {
     lineItems: { productId: string; variantId: string; quantity: number }[];
     shippingAddress: {
@@ -109,7 +115,7 @@ class PrintifyClient {
     };
   }): Promise<number> {
     const payload = {
-      line_items: params.lineItems.map(item => ({
+      line_items: params.lineItems.map((item) => ({
         product_id: item.productId,
         variant_id: parseInt(item.variantId) || item.variantId,
         quantity: item.quantity,
@@ -129,10 +135,13 @@ class PrintifyClient {
     };
 
     try {
-      const response = await this.fetchPrintify(`/shops/${this.shopId}/orders/shipping.json`, {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
+      const response = await this.fetchPrintify(
+        `/shops/${this.shopId}/orders/shipping.json`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (response) {
         if (typeof response.standard === "number") {
