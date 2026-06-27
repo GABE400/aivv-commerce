@@ -128,7 +128,7 @@ export function Hero() {
               </h1>
               
               <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-                Aivv gives businesses AI-powered automation using their own API keys — and runs a global print-on-demand store so you can shop without us holding any stock.
+                Aivv gives businesses AI-powered automation using their own API keys — and operates a global, direct-to-consumer store so you can shop without us holding any stock.
               </p>
               
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4">
@@ -151,7 +151,7 @@ export function Hero() {
               <div className="mt-6 flex flex-wrap items-center justify-center lg:justify-start gap-x-6 gap-y-2 text-xs text-muted-foreground font-medium">
                 <span>✦ Free tier powered by Groq</span>
                 <span>✦ BYOK: Claude · OpenAI · Gemini</span>
-                <span>✦ Powered by Printify + Dodo Payments</span>
+                <span>✦ Secure Payouts & Global Delivery</span>
               </div>
             </motion.div>
           </div>

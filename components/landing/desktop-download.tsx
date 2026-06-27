@@ -117,10 +117,10 @@ export function DesktopDownload() {
                 </a>
               </div>
               <div className="space-y-1">
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   Also available as a web app — no install required.
                 </p>
-                <p className="text-[10px] text-gray-600">
+                <p className="text-[10px] text-muted-foreground">
                   Built with Tauri for maximum performance and minimal system footprint.
                 </p>
               </div>
@@ -184,7 +184,7 @@ export function DesktopDownload() {
                     </div>
                   </div>
                   {/* Subtle Tauri watermark label */}
-                  <div className="pb-4 text-[9px] text-gray-500 font-medium">
+                  <div className="pb-4 text-[9px] text-muted-foreground font-medium">
                     Powered by Tauri
                   </div>
                 </div>
@@ -218,7 +218,7 @@ export function DesktopDownload() {
                           <span className="inline-block px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[8px] font-bold">
                             Active
                           </span>
-                          <div className="text-gray-500 text-[8px]">{flow.time}</div>
+                          <div className="text-muted-foreground text-[8px]">{flow.time}</div>
                         </div>
                       </div>
                     ))}

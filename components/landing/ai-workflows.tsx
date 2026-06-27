@@ -12,7 +12,7 @@ import Link from "next/link";
 const teaserCards = [
   {
     title: "AI Product Descriptions",
-    description: "Generate optimized Printify listings, tags, and pricing suggestions in seconds using localized SEO logic.",
+    description: "Generate optimized catalog listings, tags, and pricing suggestions in seconds using localized SEO logic.",
     icon: Sparkles,
   },
   {

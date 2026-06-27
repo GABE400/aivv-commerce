@@ -31,13 +31,20 @@ export class DodoPaymentProvider implements PaymentProvider {
     };
   }
 
-  async verifyWebhook(payload: string, signature: string) {
-    // Implement webhook verification using Dodo Payments SDK/logic
-    // This typically involves crypto.createHmac and comparing with signature
+  async verifyWebhook(payload: string, headers: Record<string, string>) {
+    const webhookSecret = process.env.DODO_PAYMENTS_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.warn("DODO_PAYMENTS_WEBHOOK_SECRET is not set. Webhook signature verification skipped.");
+      return true;
+    }
     try {
-      // Simplification for now - in production use the DodoPayments.webhooks.verify method
-      return true; 
-    } catch {
+      dodo.webhooks.unwrap(payload, {
+        headers,
+        key: webhookSecret,
+      });
+      return true;
+    } catch (error) {
+      console.error("Dodo webhook verification failed:", error);
       return false;
     }
   }

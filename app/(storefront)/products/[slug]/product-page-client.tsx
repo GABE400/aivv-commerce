@@ -47,6 +47,17 @@ export function ProductPageClient({ productData }: ProductPageClientProps) {
       ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}`
       : `$${minPrice.toFixed(2)}`;
 
+  const cleanDescription = (desc: string | null | undefined): string => {
+    if (!desc) return "";
+    return desc
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<p\s*>/gi, "")
+      .replace(/<\/p>/gi, "\n")
+      .replace(/<[^>]*>/g, "")
+      .replace(/\.:\s*/g, "• ")
+      .trim();
+  };
+
   return (
     <div className="grid lg:grid-cols-2 gap-12 lg:gap-24">
       {/* Left: Sticky Image Gallery */}
@@ -76,8 +87,8 @@ export function ProductPageClient({ productData }: ProductPageClientProps) {
           </div>
         </div>
 
-        <p className="text-lg text-muted-foreground leading-relaxed">
-          {productData.description}
+        <p className="text-lg text-muted-foreground leading-relaxed whitespace-pre-line">
+          {cleanDescription(productData.description)}
         </p>
 
         <div className="pt-8 border-t border-glass-border">

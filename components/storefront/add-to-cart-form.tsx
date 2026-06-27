@@ -132,8 +132,11 @@ export function AddToCartForm({ product, variants, onVariantChange }: AddToCartF
           )}
         </Button>
         {product.type === "pod" && (
-          <button className="w-full h-14 rounded-2xl glass border border-glass-border text-foreground font-bold hover:bg-glass-highlight transition-all">
-            Custom Design Configurator
+          <button 
+            disabled
+            className="w-full h-14 rounded-2xl glass border border-glass-border text-muted-foreground font-bold opacity-50 cursor-not-allowed transition-all"
+          >
+            Custom Design Configurator (Coming Soon)
           </button>
         )}
       </div>

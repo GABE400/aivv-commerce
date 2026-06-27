@@ -1,12 +1,12 @@
 import { Container } from "@/components/ui/container";
-import { Palette, CreditCard, Cloud, Truck } from "lucide-react";
+import { Palette, CreditCard, Cloud, Truck, Brain, Cpu } from "lucide-react";
 
 const badges = [
   {
-    name: "Printify",
+    name: "OpenAI",
     color: "border-emerald-500/20 dark:border-emerald-400/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400",
     dotColor: "bg-emerald-500 dark:bg-emerald-600",
-    icon: Palette,
+    icon: Brain,
   },
   {
     name: "Dodo Payments",
@@ -21,10 +21,10 @@ const badges = [
     icon: Cloud,
   },
   {
-    name: "CJ Dropshipping",
+    name: "Groq Cloud",
     color: "border-purple-500/20 dark:border-purple-400/20 bg-purple-500/5 text-purple-600 dark:text-purple-400",
     dotColor: "bg-purple-500 dark:bg-purple-600",
-    icon: Truck,
+    icon: Cpu,
   },
 ];
 

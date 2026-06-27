@@ -82,7 +82,7 @@ export default function LoginPage() {
                 Submit
               </Button>
             </div>
-            <p className="text-[10px] text-gray-500 leading-normal">
+            <p className="text-[10px] text-muted-foreground leading-normal">
               Copy the button link from your email and paste it here to sign in on desktop.
             </p>
           </form>

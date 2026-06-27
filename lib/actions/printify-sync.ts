@@ -33,6 +33,17 @@ function applyMarkup(
   return (costPrice * (1 + markup / 100)).toFixed(2);
 }
 
+function cleanSyncDescription(desc: string | null | undefined): string {
+  if (!desc) return "";
+  return desc
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<p\s*>/gi, "")
+    .replace(/<\/p>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/\.:\s*/g, "• ")
+    .trim();
+}
+
 export async function syncPrintifyCatalogAction() {
   try {
     // 1. Ensure "Print-on-Demand" category exists
@@ -103,7 +114,7 @@ export async function syncPrintifyCatalogAction() {
           .set({
             name: fullProduct.title,
             slug: cleanSlug,
-            description: fullProduct.description,
+            description: cleanSyncDescription(fullProduct.description),
             images: fullProduct.images.map((img: any) => img.src),
             // markupPercentage intentionally NOT overwritten
             updatedAt: new Date(),
@@ -117,7 +128,7 @@ export async function syncPrintifyCatalogAction() {
           .values({
             name: fullProduct.title,
             slug: cleanSlug,
-            description: fullProduct.description,
+            description: cleanSyncDescription(fullProduct.description),
             type: "pod",
             categoryId: category.id,
             images: fullProduct.images.map((img: any) => img.src),

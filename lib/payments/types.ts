@@ -17,5 +17,5 @@ export type CheckoutSessionParams = {
 
 export interface PaymentProvider {
   createCheckoutSession(params: CheckoutSessionParams): Promise<{ url: string; id: string }>;
-  verifyWebhook(payload: string, signature: string): Promise<boolean>;
+  verifyWebhook(payload: string, headers: Record<string, string>): Promise<boolean>;
 }

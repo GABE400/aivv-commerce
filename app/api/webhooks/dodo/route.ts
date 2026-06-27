@@ -7,10 +7,14 @@ import { routeAutoFulfillmentAction } from "@/lib/actions/fulfillment";
 
 export async function POST(req: Request) {
   const payload = await req.text();
-  const signature = req.headers.get("x-dodo-signature") || "";
+  const headersObj = {
+    "webhook-id": req.headers.get("webhook-id") || "",
+    "webhook-signature": req.headers.get("webhook-signature") || req.headers.get("x-dodo-signature") || "",
+    "webhook-timestamp": req.headers.get("webhook-timestamp") || "",
+  };
 
   // 1. Verify Webhook Signature
-  const isValid = await paymentProvider.verifyWebhook(payload, signature);
+  const isValid = await paymentProvider.verifyWebhook(payload, headersObj);
   if (!isValid) {
     return new NextResponse("Invalid signature", { status: 400 });
   }
@@ -18,20 +22,20 @@ export async function POST(req: Request) {
   try {
     const event = JSON.parse(payload);
     
-    // 2. Handle 'order.paid' or 'checkout.completed'
-    // Note: Adjust based on Dodo's actual event schema
-    if (event.type === "checkout.succeeded") {
-      const { checkout_id, metadata, customer, shipping_address } = event.data;
-      const orderId = metadata?.orderId;
+    // 2. Handle 'payment.succeeded' or 'checkout.succeeded'
+    if (event.type === "payment.succeeded" || event.type === "checkout.succeeded") {
+      const paymentData = event.data;
+      const orderId = paymentData.metadata?.orderId;
+      const customer = paymentData.customer;
 
-      if (orderId && metadata?.type === "subscription_upgrade") {
+      if (orderId && paymentData.metadata?.type === "subscription_upgrade") {
         await db.transaction(async (tx) => {
           // 1. Insert approved supplier application
           await tx.insert(supplierApplications).values({
-            userId: metadata.userId,
-            storeName: metadata.storeName,
-            website: metadata.website || null,
-            description: `${metadata.description} (Paid Plan: ${metadata.plan?.toUpperCase()})`,
+            userId: paymentData.metadata.userId,
+            storeName: paymentData.metadata.storeName,
+            website: paymentData.metadata.website || null,
+            description: `${paymentData.metadata.description} (Paid Plan: ${paymentData.metadata.plan?.toUpperCase()})`,
             status: "approved",
           });
 
@@ -52,33 +56,45 @@ export async function POST(req: Request) {
               currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
               updatedAt: new Date()
             })
-            .where(eq(subscriptions.userId, metadata.userId));
+            .where(eq(subscriptions.userId, paymentData.metadata.userId));
         });
 
-        console.log(`Subscription order ${orderId} successfully processed. User ${metadata.userId} upgraded to ${metadata.plan}.`);
+        console.log(`Subscription order ${orderId} successfully processed. User ${paymentData.metadata.userId} upgraded to ${paymentData.metadata.plan}.`);
         return NextResponse.json({ received: true });
       }
 
       if (orderId) {
-        // 1. Update order status and store shipping address
+        // Resolve address details from shipping_address or billing fields
+        const addr = paymentData.shipping_address || paymentData.billing;
+        let parsedAddress = null;
+        if (addr) {
+          parsedAddress = JSON.stringify({
+            firstName: customer?.name?.split(' ')[0] || "Guest",
+            lastName: customer?.name?.split(' ').slice(1).join(' ') || "User",
+            email: customer?.email,
+            line1: addr.line1 || addr.street || "123 Main St",
+            line2: addr.line2 || "",
+            city: addr.city || "New York",
+            state: addr.state || addr.region || "NY",
+            postalCode: addr.postal_code || addr.zipcode || "10001",
+            country: addr.country || "US",
+            phone: customer?.phone || customer?.phone_number || "",
+          });
+        }
+
+        // 1. Update order status and store shipping address (if successfully parsed)
+        const updateValues: any = {
+          paymentStatus: "paid",
+          status: "processing",
+          updatedAt: new Date(),
+        };
+
+        if (parsedAddress) {
+          updateValues.shippingAddress = parsedAddress;
+        }
+
         await db.update(orders)
-          .set({ 
-            paymentStatus: "paid",
-            status: "processing", 
-            shippingAddress: shipping_address ? JSON.stringify({
-              firstName: customer?.name?.split(' ')[0] || "Guest",
-              lastName: customer?.name?.split(' ').slice(1).join(' ') || "User",
-              email: customer?.email,
-              line1: shipping_address.line1,
-              line2: shipping_address.line2,
-              city: shipping_address.city,
-              state: shipping_address.state,
-              postalCode: shipping_address.postal_code,
-              country: shipping_address.country,
-              phone: customer?.phone || "",
-            }) : null,
-            updatedAt: new Date()
-          })
+          .set(updateValues)
           .where(eq(orders.id, orderId));
           
         console.log(`Order ${orderId} marked as PAID. Initializing fulfillment router...`);

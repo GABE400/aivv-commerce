@@ -16,18 +16,16 @@ import {
   ShoppingBag,
   Sparkles,
   Layers,
-  CreditCard
+  CreditCard,
+  BarChart3
 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 
-export function Sidebar({ user }: { user: any }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const role = user.role;
-
+export const getLinksForRole = (role: string) => {
   const adminLinks = [
     { name: "Overview", href: "/dashboard/admin", icon: LayoutDashboard },
+    { name: "Analytics", href: "/dashboard/admin/analytics", icon: BarChart3 },
     { name: "Products", href: "/dashboard/admin/products", icon: Package },
     { name: "Categories", href: "/dashboard/admin/categories", icon: Layers },
     { name: "Orders", href: "/dashboard/admin/orders", icon: ShoppingCart },
@@ -55,7 +53,15 @@ export function Sidebar({ user }: { user: any }) {
     { name: "Settings", href: "/dashboard/customer/settings", icon: Settings },
   ];
 
-  const links = role === "admin" ? adminLinks : role === "business" ? businessLinks : customerLinks;
+  return role === "admin" ? adminLinks : role === "business" ? businessLinks : customerLinks;
+};
+
+export function Sidebar({ user }: { user: any }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const role = user.role;
+
+  const links = getLinksForRole(role);
 
   const handleLogout = async () => {
     await authClient.signOut();

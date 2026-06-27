@@ -116,6 +116,45 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
       };
     });
 
+    // Fetch shipping address (use last order address or default fallback)
+    const lastOrder = await db.query.orders.findFirst({
+      where: eq(orders.userId, session.user.id),
+      orderBy: (orders, { desc }) => [desc(orders.createdAt)],
+    });
+    
+    let shippingAddress = {
+      firstName: session.user.name.split(" ")[0] || "Guest",
+      lastName: session.user.name.split(" ").slice(1).join(" ") || "User",
+      address1: "123 Main St",
+      address2: "",
+      city: "New York",
+      region: "NY",
+      zip: "10001",
+      country: "US",
+      phone: "",
+    };
+
+    if (lastOrder && lastOrder.shippingAddress) {
+      try {
+        const parsed = JSON.parse(lastOrder.shippingAddress);
+        if (parsed.country) {
+          shippingAddress = {
+            firstName: parsed.firstName || shippingAddress.firstName,
+            lastName: parsed.lastName || shippingAddress.lastName,
+            address1: parsed.line1 || parsed.address1 || shippingAddress.address1,
+            address2: parsed.line2 || parsed.address2 || "",
+            city: parsed.city || shippingAddress.city,
+            region: parsed.state || parsed.region || shippingAddress.region,
+            zip: parsed.postalCode || parsed.zip || shippingAddress.zip,
+            country: parsed.country || shippingAddress.country,
+            phone: parsed.phone || "",
+          };
+        }
+      } catch (e) {
+        console.error("Error parsing last order shipping address:", e);
+      }
+    }
+
     // Calculate shipping rates
     let shippingFee = 0;
     const podItems = itemsToCreate.filter(i => i.type === "pod" && i.supplierProductId && i.supplierVariantId);
@@ -125,41 +164,6 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
       // Import clients inside function to prevent circular imports if any
       const { printify } = await import("@/lib/printify");
       const { cj } = await import("@/lib/cjdropshipping");
-
-      // 1. Fetch shipping address (use last order address or default fallback)
-      const lastOrder = await db.query.orders.findFirst({
-        where: eq(orders.userId, session.user.id),
-        orderBy: (orders, { desc }) => [desc(orders.createdAt)],
-      });
-      
-      let shippingAddress = {
-        firstName: session.user.name.split(" ")[0] || "Guest",
-        lastName: session.user.name.split(" ").slice(1).join(" ") || "User",
-        address1: "123 Main St",
-        city: "New York",
-        region: "NY",
-        zip: "10001",
-        country: "US",
-      };
-
-      if (lastOrder && lastOrder.shippingAddress) {
-        try {
-          const parsed = JSON.parse(lastOrder.shippingAddress);
-          if (parsed.country) {
-            shippingAddress = {
-              firstName: parsed.firstName || shippingAddress.firstName,
-              lastName: parsed.lastName || shippingAddress.lastName,
-              address1: parsed.line1 || parsed.address1 || shippingAddress.address1,
-              city: parsed.city || shippingAddress.city,
-              region: parsed.state || parsed.region || shippingAddress.region,
-              zip: parsed.postalCode || parsed.zip || shippingAddress.zip,
-              country: parsed.country || shippingAddress.country,
-            };
-          }
-        } catch (e) {
-          console.error("Error parsing last order shipping address:", e);
-        }
-      }
 
       // Calculate Printify Shipping
       if (podItems.length > 0) {
@@ -205,6 +209,18 @@ export async function createCheckoutAction(items: { variantId: string, quantity:
       totalAmount: total.toFixed(2),
       status: "pending",
       paymentStatus: "unpaid",
+      shippingAddress: JSON.stringify({
+        firstName: shippingAddress.firstName,
+        lastName: shippingAddress.lastName,
+        email: session.user.email,
+        line1: shippingAddress.address1,
+        line2: shippingAddress.address2 || "",
+        city: shippingAddress.city,
+        state: shippingAddress.region,
+        postalCode: shippingAddress.zip,
+        country: shippingAddress.country,
+        phone: shippingAddress.phone || "",
+      }),
     }).returning();
 
     // 3. Create Order Items

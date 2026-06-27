@@ -9,11 +9,11 @@ import { cn } from "@/lib/utils";
 const faqs = [
   {
     question: "Do I need inventory to shop on Aivv?",
-    answer: "No. Our store runs on print-on-demand via Printify. Every product is made and shipped when you order — no stock, no waiting.",
+    answer: "No. Every storefront order is custom-made on-demand. Every product is printed and shipped directly when you order — no stock, no waiting, and less waste.",
   },
   {
-    question: "Can I connect my own dropshipping or Printify account to sell?",
-    answer: "No. Aivv owns and operates the storefront and dropshipping/POD fulfillment catalog directly. Platform users cannot connect their own dropshipping accounts or sell items themselves — they can purchase designs, or subscribe to use the B2B AI automation workspace.",
+    question: "Can I connect my own fulfillment or dropshipping accounts to sell?",
+    answer: "No. Aivv owns and operates the storefront catalog directly. Subscription users get access to use the B2B AI automation workspace to automate their business operations.",
   },
   {
     question: "How does payment processing work?",

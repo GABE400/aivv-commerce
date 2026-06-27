@@ -31,7 +31,7 @@ const businessSteps = [
 const shopperSteps = [
   {
     title: "Browse the catalog",
-    description: "Find products from our print-on-demand store",
+    description: "Explore premium custom-made products",
     icon: ShoppingBag,
   },
   {
@@ -41,7 +41,7 @@ const shopperSteps = [
   },
   {
     title: "We handle fulfillment",
-    description: "Printify produces and ships your order",
+    description: "Our global manufacturing network handles your shipment",
     icon: Truck,
   },
   {

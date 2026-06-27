@@ -118,7 +118,7 @@ export async function ProductShowcase() {
           </Link>
           
           <div className="inline-flex flex-wrap items-center justify-center gap-2.5 px-4 py-2 rounded-full border border-glass-border bg-glass-card/30 text-xs text-muted-foreground font-semibold">
-            <span>Fulfilled by Printify</span>
+            <span>Global Custom Manufacturing</span>
             <span className="text-accent/40">•</span>
             <span>Global shipping</span>
             <span className="text-accent/40">•</span>
