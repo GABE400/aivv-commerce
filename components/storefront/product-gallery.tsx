@@ -23,7 +23,7 @@ export function ProductGallery({ images, productName, variantImages, selectedVar
 
   if (!images || images.length === 0) {
     return (
-      <div className="sticky top-32 space-y-4">
+      <div className="relative lg:sticky lg:top-32 space-y-4">
         <div className="aspect-square glass rounded-3xl overflow-hidden border border-glass-border relative flex items-center justify-center">
           <span className="text-muted-foreground">No images available</span>
         </div>
@@ -32,7 +32,7 @@ export function ProductGallery({ images, productName, variantImages, selectedVar
   }
 
   return (
-    <div className="sticky top-32 space-y-4">
+    <div className="relative lg:sticky lg:top-32 space-y-4">
       <div className="aspect-square glass rounded-3xl overflow-hidden border border-glass-border relative">
         <Image
           src={displayImage}
