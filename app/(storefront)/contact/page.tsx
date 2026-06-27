@@ -117,7 +117,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">24/7 Operations Helpdesk</h4>
-                    <p className="text-xs text-muted-foreground leading-relaxed">We coordinate directly with CJ Dropshipping and Printify channels to resolve processing blocks.</p>
+                    <p className="text-xs text-muted-foreground leading-relaxed">We coordinate directly with our global manufacturing and supply channels to resolve processing blocks.</p>
                   </div>
                 </div>
               </div>

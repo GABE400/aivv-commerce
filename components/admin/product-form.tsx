@@ -553,7 +553,7 @@ export function ProductForm({
                         {hasPrintifyRetail && (
                           <div className="flex items-center justify-between gap-1">
                             <p className="text-[10px] text-muted-foreground">
-                              Printify:{" "}
+                            Suggested:{" "}
                               <span className="font-bold text-blue-400">
                                 ${printifyRetail.toFixed(2)}
                               </span>
@@ -650,7 +650,7 @@ export function ProductForm({
                           {hasPrintifyRetail &&
                             sellPriceDiffersFromPrintify && (
                               <p className="text-[10px] text-muted-foreground mt-1 border-t border-glass-border pt-1">
-                                vs Printify suggested:&nbsp;
+                                vs Suggested retail:&nbsp;
                                 <span className="text-blue-400 font-bold">
                                   ${printifyRetail.toFixed(2)}
                                 </span>

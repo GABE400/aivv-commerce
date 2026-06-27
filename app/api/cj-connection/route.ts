@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     if (!isValid) {
       console.error("CJ API key validation failed");
       return NextResponse.json(
-        { error: "Invalid CJ API key" },
+        { error: "Invalid API key" },
         { status: 400 },
       );
     }
@@ -134,8 +134,8 @@ export async function POST(req: NextRequest) {
     }
 
     const message = shop
-      ? `CJ Dropshipping connected. Store "${shop.name}" registered (ID: ${shop.id}).`
-      : "CJ Dropshipping connected, but no authorized shop was found via the Shop API. Re-create your API store in CJ (Authorization > API), then reconnect.";
+      ? `Supplier account connected. Store "${shop.name}" registered (ID: ${shop.id}).`
+      : "Supplier account connected, but no authorized shop was found via the Shop API. Re-create your API store in settings (Authorization > API), then reconnect.";
 
     return NextResponse.json({
       success: true,
@@ -166,7 +166,7 @@ export async function DELETE() {
 
     return NextResponse.json({
       success: true,
-      message: "CJ Dropshipping disconnected",
+      message: "Supplier disconnected",
     });
   } catch (error: any) {
     console.error("Error disconnecting CJ Dropshipping:", error);

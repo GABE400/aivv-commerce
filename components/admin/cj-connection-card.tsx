@@ -57,7 +57,7 @@ export function CjConnectionCard() {
       if (response.ok) {
         toast.success(data.message);
         if (data.shopRegistered === false) {
-          toast.warning("No authorized CJ shop found. Check Authorization > API in your CJ account.");
+          toast.warning("No authorized shop found. Check authorization settings in your supplier account.");
         }
         setShowForm(false);
         setApiKey("");
@@ -113,10 +113,10 @@ export function CjConnectionCard() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Link className="size-5" />
-          CJ Dropshipping Connection
+          Direct Supplier Connection
         </CardTitle>
         <CardDescription>
-          Connect your CJ Dropshipping account to sync products and fulfill orders
+          Connect your supplier account to sync products and fulfill orders
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -130,10 +130,10 @@ export function CjConnectionCard() {
                   <p className="text-sm text-muted-foreground mt-1">Store: {status.storeName}</p>
                 )}
                 {status.shopId ? (
-                  <p className="text-xs text-muted-foreground mt-1">CJ Shop ID: {status.shopId}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Supplier Shop ID: {status.shopId}</p>
                 ) : (
                   <p className="text-xs text-yellow-500 mt-1">
-                    Shop not registered via CJ Shop API — reconnect after verifying Authorization &gt; API
+                    Shop not registered via Shop API — reconnect after verifying Authorization &gt; API
                   </p>
                 )}
                 {status.lastValidatedAt && (
@@ -164,7 +164,7 @@ export function CjConnectionCard() {
               <div className="flex-1">
                 <p className="font-medium text-yellow-500">Not Connected</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Connect your CJ Dropshipping account to enable product sync and order fulfillment
+                  Connect your supplier account to enable product sync and order fulfillment
                 </p>
               </div>
             </div>
@@ -172,17 +172,17 @@ export function CjConnectionCard() {
             {showForm ? (
               <form onSubmit={handleConnect} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="apiKey">CJ API Key</Label>
+                  <Label htmlFor="apiKey">Supplier API Key</Label>
                   <Input
                     id="apiKey"
                     type="password"
-                    placeholder="Enter your CJ Dropshipping API key"
+                    placeholder="Enter your supplier API key"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Get your API key from the CJ Dropshipping developer portal
+                    Get your API key from the supplier developer portal
                   </p>
                 </div>
                 <div className="space-y-2">

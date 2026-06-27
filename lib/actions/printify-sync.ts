@@ -58,7 +58,7 @@ export async function syncPrintifyCatalogAction() {
           name: "Print-on-Demand",
           slug: "print-on-demand",
           description:
-            "Automated print-on-demand products from the Printify network.",
+            "Automated print-on-demand products from our partner network.",
         })
         .onConflictDoNothing()
         .returning();

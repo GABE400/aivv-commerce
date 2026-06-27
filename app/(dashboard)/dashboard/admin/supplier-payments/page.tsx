@@ -148,7 +148,7 @@ export default function SupplierPaymentsPage() {
                 items.map((item) => {
                   const status = statuses[item.id];
                   const isPod = item.variant.product.type === "pod";
-                  const supplierName = isPod ? "Printify" : "CJ Dropship";
+                  const supplierName = isPod ? "On-Demand Print" : "Direct Sourcing";
                   
                   return (
                     <tr key={item.id} className="hover:bg-glass-highlight transition-colors">

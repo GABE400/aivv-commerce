@@ -68,7 +68,7 @@ export default function PrivacyPolicyPage() {
                 We use collected information strictly to provide storefront fulfillment, system tracking, and workflow automation. Specifically:
               </p>
               <ul className="list-disc pl-5 space-y-2">
-                <li>Order parameters and shipping details are routed to fulfillment providers (Printify, CJ Dropshipping) to print and deliver purchases.</li>
+                <li>Order parameters and shipping details are routed to our global manufacturing partners to produce and deliver purchases.</li>
                 <li>Subscription checkouts are processed directly and securely by our billing vendor, Dodo Payments.</li>
                 <li>Encrypted API keys are decrypted only during active server workflow runs to make API calls to your selected model providers. We never share your API keys or expose them in client webviews.</li>
               </ul>
@@ -84,7 +84,7 @@ export default function PrivacyPolicyPage() {
             <section className="space-y-3">
               <h2 className="text-lg font-bold text-white font-syne">4. Third-Party Integrations</h2>
               <p>
-                AIVV integrates directly with third-party networks for automated pipelines. These include Printify, CJ Dropshipping, Dodo Payments, and AI model networks (Anthropic, OpenAI, Groq, Google, DeepSeek). Each service governs data according to its respective privacy policies.
+                AIVV integrates directly with third-party networks for automated pipelines. These include secure payment processors (Dodo Payments), global manufacturing networks, and AI model networks (Anthropic, OpenAI, Groq, Google, DeepSeek). Each service governs data according to its respective privacy policies.
               </p>
             </section>
 

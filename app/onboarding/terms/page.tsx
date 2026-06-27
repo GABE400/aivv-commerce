@@ -68,8 +68,8 @@ export default function ShopperTermsPage() {
                 <div className="border border-glass-border rounded-2xl bg-muted/20 p-4">
                   <ScrollArea className="h-40 pr-2">
                     <ul className="list-disc pl-4 space-y-2 text-xs text-muted-foreground leading-relaxed">
-                      <li>Aivv is a print-on-demand storefront and AI automation platform</li>
-                      <li>As a shopper, you are purchasing products fulfilled by Printify</li>
+                      <li>Aivv is an on-demand storefront and AI automation platform</li>
+                      <li>As a shopper, you are purchasing custom-made on-demand products</li>
                       <li>Payments are processed securely via Dodo Payments</li>
                       <li>We do not sell or share your personal data with third parties</li>
                       <li>Orders are non-refundable once sent to production unless there is a defect</li>

@@ -55,7 +55,7 @@ export default function TermsOfServicePage() {
               <h2 className="text-lg font-bold text-white font-syne">2. Shopper & Storefront Policies</h2>
               <ul className="list-disc pl-5 space-y-2">
                 <li>
-                  <strong>Print-on-Demand Fulfillment:</strong> AIVV products are custom printed-on-demand and fulfilled by third-party suppliers (e.g., Printify). By purchasing, you acknowledge that orders are routed immediately to production.
+                  <strong>On-Demand Fulfillment:</strong> AIVV products are custom-made on-demand and fulfilled by third-party manufacturing networks. By purchasing, you acknowledge that orders are routed immediately to production.
                 </li>
                 <li>
                   <strong>Refunds & Cancellation:</strong> Because items are custom-made, orders cannot be cancelled, modified, or refunded once placed, unless there is a clear manufacturing defect or shipping damage.

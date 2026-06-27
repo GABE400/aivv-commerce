@@ -15,7 +15,7 @@ export function CjSyncButton() {
 
   const handleSync = async () => {
     setState("syncing");
-    const toastId = toast.loading("Syncing CJ Dropshipping catalog…");
+    const toastId = toast.loading("Syncing Global catalog…");
 
     try {
       const result = await syncCJDropshippingCatalogAction();
@@ -29,7 +29,7 @@ export function CjSyncButton() {
         const msg = result.error || "Sync failed";
         if (msg.toLowerCase().includes("not connected")) {
           toast.error(
-            "CJ account not connected — connect it in the Business settings first.",
+            "Direct supplier account not connected — connect it in the Business settings first.",
             { id: toastId }
           );
         } else {
@@ -41,7 +41,7 @@ export function CjSyncButton() {
     } catch (error: any) {
       toast.error(
         error?.message?.includes("not connected")
-          ? "CJ account not connected — connect it in the Business settings first."
+          ? "Direct supplier account not connected — connect it in the Business settings first."
           : "Something went wrong during synchronization",
         { id: toastId }
       );
@@ -58,7 +58,7 @@ export function CjSyncButton() {
   };
 
   const labels: Record<SyncState, string> = {
-    idle: "Sync CJ Dropshipping",
+    idle: "Sync Direct Catalog",
     syncing: "Syncing…",
     done: "Synced!",
     error: "Sync Failed",

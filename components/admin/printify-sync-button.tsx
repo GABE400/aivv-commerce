@@ -15,7 +15,7 @@ export function PrintifySyncButton() {
 
   const handleSync = async () => {
     setState("syncing");
-    const toastId = toast.loading("Syncing Printify catalog…");
+    const toastId = toast.loading("Syncing On-Demand catalog…");
 
     try {
       const result = await syncPrintifyCatalogAction();
@@ -48,7 +48,7 @@ export function PrintifySyncButton() {
   };
 
   const labels: Record<SyncState, string> = {
-    idle: "Sync Printify",
+    idle: "Sync On-Demand",
     syncing: "Syncing…",
     done: "Synced!",
     error: "Sync Failed",

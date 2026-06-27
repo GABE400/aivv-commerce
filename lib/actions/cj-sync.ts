@@ -57,7 +57,7 @@ export async function syncCJDropshippingCatalogAction() {
           name: "Dropshipping",
           slug: "dropshipping",
           description:
-            "Automated dropshipping products from the CJ Dropshipping network.",
+            "Automated dropshipping products from our direct supplier network.",
         })
         .onConflictDoNothing()
         .returning();
@@ -118,7 +118,7 @@ export async function syncCJDropshippingCatalogAction() {
 
       let productId: string;
       const productName =
-        p.nameEn || p.productName || p.name || "CJ Dropshipping Product";
+        p.nameEn || p.productName || p.name || "Direct Supplier Product";
 
       const cleanSlug = `${productName
         .toLowerCase()
@@ -155,7 +155,7 @@ export async function syncCJDropshippingCatalogAction() {
             description:
               p.description ||
               existingProduct.description ||
-              "CJ Dropshipping product.",
+              "Direct Supplier product.",
             images: imageUrls.length > 0 ? imageUrls : existingProduct.images,
             // Do NOT overwrite markupPercentage — admin sets this manually
             updatedAt: new Date(),
@@ -169,7 +169,7 @@ export async function syncCJDropshippingCatalogAction() {
           .values({
             name: productName,
             slug: cleanSlug,
-            description: p.description || "CJ Dropshipping product.",
+            description: p.description || "Direct Supplier product.",
             type: "dropship",
             categoryId: category.id,
             images: imageUrls,
@@ -296,11 +296,11 @@ export async function syncCJDropshippingCatalogAction() {
 
     revalidatePath("/dashboard/admin/products");
     const shopNote = shopId
-      ? `${linkedCount} products linked to CJ store.`
-      : "No CJ shop ID found — reconnect your API store in CJ Authorization, then sync again.";
+      ? `${linkedCount} products linked to Supplier store.`
+      : "No shop ID found — reconnect your API store in settings, then sync again.";
     return {
       success: true,
-      message: `CJ Sync complete: ${createdCount} created, ${updatedCount} updated. ${shopNote}`,
+      message: `Sync complete: ${createdCount} created, ${updatedCount} updated. ${shopNote}`,
     };
   } catch (error: any) {
     console.error("CJ Dropshipping Sync Error:", error);
