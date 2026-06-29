@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Sidebar, getLinksForRole } from "@/components/dashboard/sidebar";
+import { Sidebar } from "@/components/dashboard/sidebar";
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import Link from "next/link";
 import Image from "next/image";
@@ -20,7 +20,6 @@ export default async function DashboardLayout({
   }
 
   const role = session.user.role;
-  const links = getLinksForRole(role);
   
   // Logic to prevent cross-dashboard access
   // If someone with role 'customer' tries to access '/admin', redirect them.
@@ -42,7 +41,7 @@ export default async function DashboardLayout({
           <span className="text-md font-bold">Aivv <span className="text-accent">OS</span></span>
         </Link>
         
-        <MobileSidebar user={session.user} links={links} />
+        <MobileSidebar user={session.user} />
       </header>
 
       {/* Shared Dashboard Sidebar */}

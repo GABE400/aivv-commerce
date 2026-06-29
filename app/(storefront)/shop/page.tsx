@@ -1,56 +1,45 @@
 import { db } from "@/lib/db";
 import { products } from "@/lib/db/schema";
-import Image from "next/image";
-import Link from "next/link";
-import { ShoppingBag, Star, ArrowRight } from "lucide-react";
-import { Navbar } from "@/components/landing/navbar";
+import { eq } from "drizzle-orm";
+import { ShopNavbar } from "@/components/storefront/shop-navbar";
+import { ShopHero } from "@/components/storefront/shop-hero";
+import { ShopCatalog } from "@/components/storefront/shop-catalog";
 import { Footer } from "@/components/landing/footer";
 import { Container } from "@/components/ui/container";
-import { CatalogFilters } from "@/components/storefront/catalog-filters";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, ShoppingBag, Globe, Zap, ShieldCheck } from "lucide-react";
+import type { Metadata } from "next";
+import { Suspense } from "react";
 
-interface PageProps {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
+export const metadata: Metadata = {
+  title: "Aivv Shop | Global Print-on-Demand & Dropshipping Storefront",
+  description: "Shop without limits. Discover curated print-on-demand designs and premium dropshipping items shipped globally directly from our manufacturing partners.",
+  keywords: [
+    "Print on demand shop",
+    "Dropshipping storefront",
+    "Custom designer shirts",
+    "Unique phone cases",
+    "Automated e-commerce",
+    "Duty-free global shipping",
+    "Aivv retail shop",
+  ],
+  openGraph: {
+    title: "Aivv Shop | Global Print-on-Demand & Dropshipping Storefront",
+    description: "Every product manufactured on demand and shipped globally. No warehouse, no waiting.",
+  }
+};
 
-export default async function ShopPage(props: PageProps) {
-  const searchParams = await props.searchParams;
-  const search = typeof searchParams.search === "string" ? searchParams.search : undefined;
-  const categorySlug = typeof searchParams.category === "string" ? searchParams.category : undefined;
-  const type = typeof searchParams.type === "string" ? searchParams.type : undefined;
-  const sort = typeof searchParams.sort === "string" ? searchParams.sort : undefined;
+export const revalidate = 0; // Dynamic rendering for shop
 
-  // 1. Fetch categories for filters
+export default async function ShopPage() {
+  // Fetch active categories
   const allCategories = await db.query.categories.findMany({
     orderBy: (categories, { asc }) => [asc(categories.name)],
   });
 
-  // 2. Fetch products with basic query filters
+  // Fetch active products with variants and category relationships
   const allProducts = await db.query.products.findMany({
-    where: (products, { eq, and, ilike, or }) => {
-      const conditions = [eq(products.isActive, true)];
-
-      if (search) {
-        conditions.push(
-          or(
-            ilike(products.name, `%${search}%`),
-            ilike(products.description, `%${search}%`) as any
-          ) as any
-        );
-      }
-
-      if (type) {
-        conditions.push(eq(products.type, type as any));
-      }
-
-      if (categorySlug) {
-        const cat = allCategories.find(c => c.slug === categorySlug);
-        if (cat) {
-          conditions.push(eq(products.categoryId, cat.id));
-        }
-      }
-
-      return and(...conditions);
-    },
+    where: eq(products.isActive, true),
     with: {
       variants: true,
       category: true,
@@ -58,117 +47,92 @@ export default async function ShopPage(props: PageProps) {
     orderBy: (products, { desc }) => [desc(products.createdAt)],
   });
 
-  // 3. Compute price ranges and sort
-  let filteredProducts = allProducts.map((product) => {
-    const prices = product.variants.map((v) => parseFloat(v.price));
-    const minPrice = prices.length > 0 ? Math.min(...prices) : 0;
-    const maxPrice = prices.length > 0 ? Math.max(...prices) : 0;
-    const hasPriceRange = minPrice !== maxPrice;
-    const displayPrice = hasPriceRange ? `$${minPrice.toFixed(2)} - $${maxPrice.toFixed(2)}` : `$${minPrice.toFixed(2)}`;
-    return { ...product, minPrice, maxPrice, displayPrice };
-  });
-
-  if (sort === "price-asc") {
-    filteredProducts.sort((a, b) => a.minPrice - b.minPrice);
-  } else if (sort === "price-desc") {
-    filteredProducts.sort((a, b) => b.minPrice - a.minPrice);
-  }
-
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Navbar />
-      <main className="flex-1 py-32 relative overflow-hidden">
-        {/* Background glow highlights */}
-        <div className="absolute right-0 top-1/3 w-[600px] h-[600px] bg-accent/3 blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute left-[-10%] bottom-1/4 w-[500px] h-[500px] bg-purple-500/3 blur-[120px] rounded-full pointer-events-none" />
+    <div className="flex min-h-screen flex-col bg-background text-foreground transition-colors duration-300">
+      {/* Navigation Header */}
+      <ShopNavbar categories={allCategories} />
 
-        <Container className="space-y-12">
-          {/* Section Header */}
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-glass-border bg-glass text-[10px] font-bold text-accent uppercase tracking-wider mb-6">
-              <ShoppingBag className="size-3" />
-              Full Catalog
+      <main className="flex-1">
+        {/* Shop Hero Section */}
+        <ShopHero />
+
+        {/* Trust Strip */}
+        <section className="py-6 border-b border-glass-border/30 bg-muted/20 backdrop-blur-sm relative z-10">
+          <Container>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3 text-xs md:text-sm text-muted-foreground font-semibold text-center">
+              <span className="flex items-center gap-1.5"><Globe className="size-3.5 text-blue-400" /> 150+ Countries Delivered</span>
+              <span className="text-glass-border/50 hidden md:inline">•</span>
+              <span className="flex items-center gap-1.5"><Zap className="size-3.5 text-blue-400" /> Avg. 1.2 Day Fulfillment</span>
+              <span className="text-glass-border/50 hidden md:inline">•</span>
+              <span className="flex items-center gap-1.5"><ShoppingBag className="size-3.5 text-blue-400" /> Print on Demand</span>
+              <span className="text-glass-border/50 hidden md:inline">•</span>
+              <span className="flex items-center gap-1.5"><ShieldCheck className="size-3.5 text-blue-400" /> Secure Checkout via Dodo Payments</span>
             </div>
-            <h1 className="text-3xl md:text-5xl font-bold mb-6 text-foreground font-syne">
-              Browse our <span className="text-gradient">Products</span>
-            </h1>
-            <p className="text-base md:text-lg text-muted-foreground leading-relaxed">
-              Explore custom print-on-demand designs and premium items sourced dynamically via global dropshipping.
-            </p>
-          </div>
+          </Container>
+        </section>
 
-          {/* Interactive Filters row */}
-          <CatalogFilters categories={allCategories} />
+        {/* Catalog Section */}
+        <section id="catalog" className="py-20 relative bg-background">
+          {/* Subtle background glow */}
+          <div className="absolute left-[5%] top-[25%] w-[400px] h-[400px] bg-blue-500/[0.02] blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute right-[5%] bottom-[25%] w-[400px] h-[400px] bg-indigo-500/[0.02] blur-[120px] rounded-full pointer-events-none" />
 
-          {/* Product grid */}
-          {filteredProducts.length === 0 ? (
-            <div className="text-center py-20 glass border border-glass-border rounded-3xl max-w-md mx-auto">
-              <ShoppingBag className="size-12 text-muted-foreground mx-auto mb-4" />
-              <h2 className="text-xl font-bold text-foreground mb-2">No products found</h2>
-              <p className="text-muted-foreground text-sm">
-                No items match your search or filter parameters. Try clearing your search filters.
-              </p>
+          <Container>
+            <Suspense fallback={<div className="text-center py-20 text-muted-foreground text-sm font-semibold">Loading Catalog...</div>}>
+              <ShopCatalog initialProducts={allProducts} />
+            </Suspense>
+          </Container>
+        </section>
+
+        {/* How It Works Strip */}
+        <section className="py-16 border-t border-glass-border/30 bg-muted/20 relative overflow-hidden">
+          <Container>
+            <div className="text-center max-w-xl mx-auto mb-12">
+              <h2 className="text-2xl font-bold font-syne text-foreground tracking-tight">How it works</h2>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {filteredProducts.map((product) => (
-                <Link 
-                  key={product.id} 
-                  href={`/products/${product.slug}`}
-                  className="group relative"
-                >
-                  <div className="relative aspect-[4/5] rounded-3xl overflow-hidden glass border border-glass-border mb-6 group-hover:border-accent/40 shadow-sm group-hover:shadow-[0_0_40px_rgba(124,58,237,0.12)] transition-all duration-500">
-                    {product.images[0] ? (
-                       <Image 
-                        src={product.images[0]} 
-                        alt={product.name}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      />
-                    ) : (
-                      <div className="size-full flex items-center justify-center bg-muted/20">
-                        <ShoppingBag className="size-12 text-muted" />
-                      </div>
-                    )}
-                    
-                    <div className="absolute top-4 left-4 z-10">
-                      <span className="px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-[9px] uppercase font-bold tracking-widest text-white shadow-md">
-                        {product.type === "pod" ? "Print-on-Demand" : "Dropship"}
-                      </span>
-                    </div>
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-
-                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-all duration-500 flex items-center justify-center backdrop-blur-[2px]">
-                      <div className="flex items-center gap-2 px-5 py-3 bg-white text-black dark:bg-foreground dark:text-background font-bold text-xs rounded-full shadow-2xl translate-y-4 group-hover:translate-y-0 transition-all duration-500 hover:scale-105 active:scale-95">
-                        <span>Quick View</span>
-                        <ArrowRight className="size-3.5 group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
+            
+            <div className="grid md:grid-cols-3 gap-8 text-center max-w-4xl mx-auto">
+              {[
+                { step: "1", title: "Browse the catalog", desc: "Select from our curated print-on-demand designs and dropshipped listings." },
+                { step: "2", title: "Place your order", desc: "Pay securely in USD or your local currency using Dodo Payments checkout." },
+                { step: "3", title: "We manufacture & ship", desc: "Our global supplier network manufactures and delivers directly to your door." }
+              ].map((item) => (
+                <div key={item.step} className="space-y-3 relative group">
+                  <div className="size-10 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 font-bold text-sm flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(59,130,246,0.08)] group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all duration-300">
+                    {item.step}
                   </div>
-
-                  <div className="space-y-2 px-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-extrabold text-muted-foreground tracking-widest">
-                        {product.category?.name || "Global Store"}
-                      </span>
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-muted/30 border border-glass-border">
-                        <Star className="size-3 text-amber-500 fill-amber-500" />
-                        <span className="text-[10px] font-bold text-foreground">4.9</span>
-                      </div>
-                    </div>
-                    <h3 className="text-base md:text-lg font-bold group-hover:text-accent transition-colors duration-300 truncate text-foreground/90">{product.name}</h3>
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-extrabold text-foreground">{product.displayPrice}</span>
-                      <span className="text-[10px] text-muted-foreground font-semibold">USD</span>
-                    </div>
-                  </div>
-                </Link>
+                  <h3 className="text-base font-bold text-foreground">{item.title}</h3>
+                  <p className="text-xs text-muted-foreground leading-relaxed px-4">{item.desc}</p>
+                </div>
               ))}
             </div>
-          )}
-        </Container>
+          </Container>
+        </section>
+
+        {/* Footer B2B CTA Banner */}
+        <section className="py-16 bg-gradient-to-r from-blue-950/70 via-indigo-950/70 to-blue-950/70 border-t border-glass-border/30 relative text-white">
+          <Container>
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 max-w-4xl mx-auto">
+              <div className="space-y-2 text-center md:text-left">
+                <h3 className="text-lg font-bold text-white font-syne">Looking to automate your business?</h3>
+                <p className="text-xs text-blue-100/80 leading-relaxed">
+                  Use Aivv’s AI-powered workspace to set up automated workflows, connect your business, and run operations on autopilot.
+                </p>
+              </div>
+
+              <div className="shrink-0">
+                <a href="/">
+                  <Button variant="outline" className="border-blue-500/30 hover:border-blue-600 text-blue-400 hover:bg-blue-600 hover:text-white rounded-xl text-xs font-bold transition-all duration-300 active:scale-95 cursor-pointer">
+                    Explore Aivv for Business →
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </Container>
+        </section>
       </main>
+
+      {/* Main Footer */}
       <Footer />
     </div>
   );

@@ -23,6 +23,11 @@ const faqs = [
     question: "What is the AI Automation platform?",
     answer: "Aivv lets any business — not just ecommerce — connect their own Claude or OpenAI API key and automate their operations. Think customer follow-ups, internal reports, content generation, and more. You bring the API key, we provide the workflows.",
   },
+  // TODO: Re-enable when US Business Launch is ready
+  // {
+  //   question: "Who is the US Business Formation (Launch) service for?",
+  //   answer: "It is designed for international founders—specifically in Africa, Asia, and Latin America—who want to form a US LLC, obtain an EIN, and establish a US bank account to process global payments and run operations on autopilot without needing a US SSN or ITIN.",
+  // },
   {
     question: "Do I need to be technical to use the automation?",
     answer: "No. Aivv provides pre-built workflows you can activate in minutes. For businesses in Zambia, we also offer in-person setup — we'll come to you.",

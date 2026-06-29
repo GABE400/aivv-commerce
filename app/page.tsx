@@ -10,9 +10,29 @@ import { Pricing } from "@/components/landing/pricing";
 import { FAQ } from "@/components/landing/faq";
 import { FinalCTA } from "@/components/landing/final-cta";
 import { Footer } from "@/components/landing/footer";
-import { ProductShowcase } from "@/components/landing/product-showcase";
+import { Sell } from "@/components/landing/sell";
 import { AIWorkflows } from "@/components/landing/ai-workflows";
 import { Automation } from "@/components/landing/automation";
+// import { Launch } from "@/components/landing/launch"; // TODO: Re-enable when US Business Launch is ready
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Aivv | AI Business Automation & Global Commerce Platform",
+  description: "Automate your business operations with AI-powered workflows. Connect your own Claude, OpenAI, or Gemini key and run custom automations from one dashboard.",
+  keywords: [
+    "AI business automation",
+    "Workflow automation",
+    "AI workflows",
+    "Business operations",
+    "Global commerce",
+    "Print on demand",
+    "Dropshipping automation",
+  ],
+  openGraph: {
+    title: "Aivv | AI Business Automation & Global Commerce Platform",
+    description: "Automate your business operations with AI-powered workflows. Connect your own API key and run custom automations from one dashboard.",
+  }
+};
 
 export default function Home() {
   return (
@@ -22,7 +42,8 @@ export default function Home() {
         <Hero />
         <SocialProof />
         <Automation />
-        <ProductShowcase />
+        {/* <Launch /> */}{/* TODO: Re-enable when US Business Launch is ready */}
+        <Sell />
         <Features />
         <HowItWorks />
         <DashboardPreview />

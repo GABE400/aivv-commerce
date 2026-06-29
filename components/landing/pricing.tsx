@@ -171,7 +171,72 @@ export function Pricing() {
           </div>
         </div>
 
+        {/* TODO: Re-enable when US Business Launch is ready */}
+        {/* <div className="mt-24 max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/5 text-[10px] font-bold text-blue-400 uppercase tracking-wider mb-4 shadow-[0_0_15px_rgba(59,130,246,0.05)]">
+              Business Add-on
+            </div>
+            <h3 className="text-2xl md:text-3xl font-extrabold text-foreground font-syne">
+              US Business Formation & Compliance
+            </h3>
+          </div>
 
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="flex justify-center"
+          >
+            <Card className="w-full relative overflow-hidden group transition-all duration-500 border-blue-500/30 hover:border-blue-500 bg-blue-500/[0.01] hover:shadow-[0_0_40px_rgba(59,130,246,0.12)] rounded-2xl">
+              <div className="absolute top-0 right-0 px-4 py-1.5 bg-blue-600 text-[10px] font-bold uppercase tracking-widest text-white rounded-bl-lg shadow-sm">
+                Renews annually. Cancel anytime.
+              </div>
+
+              <CardContent className="p-8 md:p-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <div className="space-y-4 flex-1">
+                  <div className="inline-flex items-center gap-1.5 text-xs text-blue-400 font-bold uppercase tracking-wider">
+                    US Business Formation & Compliance
+                  </div>
+                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-foreground">
+                    <span className="text-4xl font-extrabold font-syne text-foreground">$249</span>
+                    <span className="text-muted-foreground text-sm">/year</span>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-bold border border-emerald-500/20">
+                      Save over $1,750/year
+                    </span>
+                  </div>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    LLC filing, EIN, registered agent, annual report, bookkeeping. <span className="text-blue-400/90 font-medium">(Typically $1,999/year on other compliance platforms)</span>
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 pt-2">
+                    {[
+                      "LLC filing in all 50 states",
+                      "EIN (Tax ID) Registration",
+                      "Registered Agent Service (1 Year)",
+                      "Annual Report filing assistance",
+                      "Bookkeeping synced directly to Aivv revenue"
+                    ].map((feature) => (
+                      <div key={feature} className="flex items-center space-x-2.5 text-sm">
+                        <Check className="size-4 text-blue-400 shrink-0" />
+                        <span className="text-muted-foreground group-hover:text-foreground/90 transition-colors">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex shrink-0 items-center justify-start md:justify-end md:w-56">
+                  <Link
+                    href="/signup"
+                    className="w-full h-12 font-bold inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all duration-300 active:scale-95 cursor-pointer shadow-lg shadow-blue-500/25 group"
+                  >
+                    Add to your plan →
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div> */}
 
         {/* Global Payments Disclaimer */}
         <motion.p

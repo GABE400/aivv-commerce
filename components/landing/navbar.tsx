@@ -15,10 +15,10 @@ import { authClient } from "@/lib/auth-client";
 import { CartDrawer } from "@/components/storefront/cart-drawer";
 
 const navLinks = [
-  { name: "Automate", href: "#automation" },
-  { name: "Shop", href: "#shop" },
-  { name: "Pricing", href: "#pricing" },
-  { name: "How It Works", href: "#how-it-works" },
+  { name: "Automate", href: "/#automation" },
+  // { name: "Launch", href: "/#launch" }, // TODO: Re-enable when US Business Launch is ready
+  { name: "Pricing", href: "/#pricing" },
+  { name: "How It Works", href: "/#how-it-works" },
 ];
 
 export function Navbar() {
@@ -48,13 +48,21 @@ export function Navbar() {
 
   return (
     <>
+      {/* Top Banner */}
+      <div className="w-full py-2 bg-gradient-to-r from-blue-900/60 to-indigo-900/60 text-center text-xs font-medium tracking-wide text-white fixed top-0 left-0 right-0 z-50 border-b border-glass-border/30 h-9 flex items-center justify-center">
+        <span>Looking for the store? </span>
+        <Link href="/shop" className="underline hover:text-blue-300 font-bold ml-1 transition-colors">
+          Visit the Shop →
+        </Link>
+      </div>
+
       <motion.header
         style={{
           backgroundColor,
           backdropFilter: backdropBlur,
           borderColor: borderOpacity,
         }}
-        className="fixed top-0 left-0 right-0 z-50 border-b transition-colors duration-300"
+        className="fixed top-9 left-0 right-0 z-50 border-b transition-colors duration-300"
       >
         <Container>
           <div className="flex h-20 items-center justify-between">
@@ -89,19 +97,18 @@ export function Navbar() {
               ))}
               <div className="h-6 w-px bg-glass-border mx-2" />
               <ThemeToggle />
-              <CartDrawer />
               
               {session ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   {(session.user as any).role === "admin" && (
-                    <Link href="/dashboard/admin">
-                      <Button variant="ghost" size="sm" className="gap-2 rounded-xl text-accent font-bold hover:bg-accent/10">
+                    <Link href="/dashboard/admin" className="shrink-0">
+                      <Button variant="ghost" size="sm" className="gap-2 rounded-xl text-accent font-bold hover:bg-accent/10 shrink-0">
                         Admin
                       </Button>
                     </Link>
                   )}
-                  <Link href="/dashboard">
-                    <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+                  <Link href="/dashboard" className="shrink-0">
+                    <Button variant="outline" size="sm" className="gap-2 rounded-xl shrink-0">
                       <User className="size-4" />
                       Dashboard
                     </Button>
@@ -111,15 +118,15 @@ export function Navbar() {
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="font-bold"
+                  className="font-bold shrink-0"
                   onClick={() => setIsAuthModalOpen(true)}
                 >
                   Sign In
                 </Button>
               )}
               
-              <Link href={session ? "/dashboard/customer/automate" : "/signup"}>
-                <Button size="sm" className="rounded-xl">Start Free</Button>
+              <Link href={session ? "/dashboard/customer/automate" : "/signup"} className="shrink-0">
+                <Button size="sm" className="rounded-xl px-5 shrink-0">Start Free</Button>
               </Link>
             </nav>
 

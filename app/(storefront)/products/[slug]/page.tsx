@@ -3,7 +3,7 @@ import { products } from "@/lib/db/schema";
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Container } from "@/components/ui/container";
-import { Navbar } from "@/components/landing/navbar";
+import { ShopNavbar } from "@/components/storefront/shop-navbar";
 import { Footer } from "@/components/landing/footer";
 import { ProductPageClient } from "./product-page-client";
 import type { Metadata } from "next";
@@ -64,6 +64,10 @@ export default async function ProductPage({
     },
   });
 
+  const allCategories = await db.query.categories.findMany({
+    orderBy: (categories, { asc }) => [asc(categories.name)],
+  });
+
   if (!productData || productData.variants.length === 0) {
     notFound();
   }
@@ -105,7 +109,7 @@ export default async function ProductPage({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSchema) }}
       />
-      <Navbar />
+      <ShopNavbar categories={allCategories} />
       <main className="flex-1 pt-32 pb-20">
         <Container>
           <ProductPageClient productData={productData} />

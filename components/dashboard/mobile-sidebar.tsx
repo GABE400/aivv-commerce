@@ -10,11 +10,14 @@ import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export function MobileSidebar({ user, links }: { user: any; links: any[] }) {
+import { getLinksForRole } from "@/lib/navigation";
+
+export function MobileSidebar({ user }: { user: any }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const role = user.role;
+  const links = getLinksForRole(role);
 
   const handleLogout = async () => {
     await authClient.signOut();
