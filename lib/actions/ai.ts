@@ -7,6 +7,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { encrypt } from "@/lib/encryption";
 import { revalidatePath } from "next/cache";
+import { verifyWorkflowActivationLimit, verifyApiKeyLimit, verifyWebhookUsage } from "./limits";
 
 export async function getUserSubscription() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -69,6 +70,8 @@ export async function saveApiKey(provider: string, key: string) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Unauthorized");
 
+  await verifyApiKeyLimit(session.user.id, provider);
+
   const { encrypted, iv } = encrypt(key);
 
   const existing = await db.select().from(aiApiKeys).where(and(eq(aiApiKeys.userId, session.user.id), eq(aiApiKeys.provider, provider))).limit(1);
@@ -106,6 +109,8 @@ export async function deleteApiKey(provider: string) {
 export async function activateWorkflow(templateId: string, provider: string, model: string, customPrompt?: string) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Unauthorized");
+
+  await verifyWorkflowActivationLimit(session.user.id, templateId);
 
   const existing = await db.select().from(userWorkflows).where(and(eq(userWorkflows.userId, session.user.id), eq(userWorkflows.templateId, templateId))).limit(1);
 
@@ -190,6 +195,17 @@ export async function clearWorkflowHistory() {
 export async function updateWorkflowConfigAction(workflowId: string, config: string | null) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) throw new Error("Unauthorized");
+
+  if (config) {
+    try {
+      const parsed = JSON.parse(config);
+      if (parsed.enablePipedream) {
+        await verifyWebhookUsage(session.user.id);
+      }
+    } catch (e) {
+      // ignore parsing error
+    }
+  }
 
   await db.update(userWorkflows)
     .set({ config, updatedAt: new Date() })

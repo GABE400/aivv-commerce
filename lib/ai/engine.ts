@@ -1,8 +1,9 @@
 import { db } from "@/lib/db";
-import { userWorkflows, workflowTemplates, aiApiKeys, workflowExecutions } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { userWorkflows, workflowTemplates, aiApiKeys, workflowExecutions, orders, productVariants } from "@/lib/db/schema";
+import { eq, and, gte, lte, sql } from "drizzle-orm";
 import { decrypt } from "@/lib/encryption";
 import { getProvider } from "./providers";
+import { verifyExecutionLimit } from "@/lib/actions/limits";
 import { buildDocumentSummarizerPrompt } from "./templates/document-summarizer";
 import { buildEmailResponderPrompt } from "./templates/email-responder";
 import { buildInvoiceAssistantPrompt } from "./templates/invoice-assistant";
@@ -19,6 +20,9 @@ export async function executeWorkflow(params: {
   input: Record<string, any>;
 }) {
   const { userId, userWorkflowId, input } = params;
+
+  // Enforce subscription monthly run limit check
+  await verifyExecutionLimit(userId);
 
   // 1. Fetch user workflow and template
   const uwResult = await db.select()
@@ -84,6 +88,46 @@ export async function executeWorkflow(params: {
     }
   }
 
+  // 2.5 Fetch real-time store metrics for prompt context seeding
+  let businessContext = "";
+  try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    // Fetch today's orders
+    const todayOrders = await db.select()
+      .from(orders)
+      .where(gte(orders.createdAt, startOfToday));
+    const salesToday = todayOrders.reduce((sum, o) => sum + parseFloat(o.totalAmount || "0"), 0);
+
+    // Fetch pending orders count
+    const pendingOrdersResult = await db.select({
+      count: sql<number>`count(*)`
+    })
+      .from(orders)
+      .where(eq(orders.status, "pending"));
+    const pendingOrdersCount = Number(pendingOrdersResult[0]?.count || 0);
+
+    // Fetch low stock variants (under 5 units)
+    const lowStockVariants = await db.select()
+      .from(productVariants)
+      .where(lte(productVariants.inventory, 5))
+      .limit(5);
+
+    const stockAlerts = lowStockVariants.map(v => `${v.name} (SKU: ${v.sku}) - Stock: ${v.inventory}`).join(", ") || "None";
+
+    businessContext = `
+[AIVV OS SYSTEM REAL-TIME BUSINESS TELEMETRY CONTEXT]
+- Today's Date: ${new Date().toLocaleDateString()}
+- Revenue Today: $${salesToday.toFixed(2)}
+- Pending Orders Count: ${pendingOrdersCount}
+- Low Stock Alerts: ${stockAlerts}
+[END SYSTEM TELEMETRY CONTEXT - Use this context to answer questions, compile reports, or draft communications if relevant. Otherwise, proceed with the task.]
+`;
+  } catch (err) {
+    console.error("Failed to fetch real-time telemetry metrics for prompt:", err);
+  }
+
   // 3. Build Prompt
   let prompt = "";
   if (template.slug === "document-summarizer") {
@@ -100,6 +144,10 @@ export async function executeWorkflow(params: {
     prompt = buildSeoCampaignPrompt(input.topicDescription || "", input.primaryKeywords || "");
   } else {
     throw new Error(`Unknown workflow template slug: ${template.slug}`);
+  }
+
+  if (businessContext) {
+    prompt = businessContext + "\n" + prompt;
   }
 
   // Allow custom prompt override if user defined one
